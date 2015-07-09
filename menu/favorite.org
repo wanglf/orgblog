@@ -1,0 +1,10 @@
+#+TITLE: 收藏
+#+AUTHOR: Micky Ching
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_LAYOUT: body
+
+* 网站导航
+| 分类     | 列表                          |
+|----------+-------------------------------|
+| 演示文档 | [[/menu/slide.html][演示文档列表]]                  |
