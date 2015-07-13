@@ -2,7 +2,7 @@
 
 jekyll_dir = build/jekyll
 menu = menu
-posts =
+posts = network
 
 posts:
 	puborg -j menu -o $(jekyll_dir)
