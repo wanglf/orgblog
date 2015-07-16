@@ -1,0 +1,138 @@
+#+TITLE: Ubuntu实用技巧
+#+AUTHOR: Micky Ching
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: linux ubuntu
+
+* 实用技巧
+** 软件源
+#+HTML: <!--abstract-begin-->
+国内用163的源比较快，编辑 =/etc/apt/sources.list= 写入如下内容。
+#+BEGIN_SRC sh
+# 14.04
+deb http://mirrors.163.com/ubuntu/ trusty main restricted universe multiverse
+deb http://mirrors.163.com/ubuntu/ trusty-security main restricted universe multiverse
+deb http://mirrors.163.com/ubuntu/ trusty-updates main restricted universe multiverse
+deb http://mirrors.163.com/ubuntu/ trusty-proposed main restricted universe multiverse
+deb-src http://mirrors.163.com/ubuntu/ trusty main restricted universe multiverse
+deb-src http://mirrors.163.com/ubuntu/ trusty-security main restricted universe multiverse
+deb-src http://mirrors.163.com/ubuntu/ trusty-updates main restricted universe multiverse
+deb-src http://mirrors.163.com/ubuntu/ trusty-proposed main restricted universe multiverse
+#+END_SRC
+#+HTML: <!--abstract-end-->
+
+#+BEGIN_SRC sh
+# 12.04
+deb http://mirrors.163.com/ubuntu/ precise main restricted universe multiverse
+deb http://mirrors.163.com/ubuntu/ precise-security main restricted universe multiverse
+deb http://mirrors.163.com/ubuntu/ precise-updates main restricted universe multiverse
+deb http://mirrors.163.com/ubuntu/ precise-proposed main restricted universe multiverse
+deb-src http://mirrors.163.com/ubuntu/ precise main restricted universe multiverse
+deb-src http://mirrors.163.com/ubuntu/ precise-security main restricted universe multiverse
+deb-src http://mirrors.163.com/ubuntu/ precise-updates main restricted universe multiverse
+deb-src http://mirrors.163.com/ubuntu/ precise-proposed main restricted universe multiverse
+#+END_SRC
+
+** 文件管理
+*** 给nautilus添加在当前目录打开终端选项
+#+BEGIN_SRC sh
+sudo apt-get install nautilus-open-terminal
+#+END_SRC
+
+*** 配置NFS远程文件系统
+服务端安装NFS服务端工具。
+#+BEGIN_SRC sh
+sudo apt-get install nfs-kernel-server
+#+END_SRC
+
+编辑 =/etc/exports= 配置NFS服务选项，添加如下一行。
+#+BEGIN_SRC sh
+/home/micky/share/nfs  *(ro,sync,no_root_squash)
+#+END_SRC
+
+使用root权限启动NFS服务。
+#+BEGIN_SRC sh
+service nfs-kernel-server restart
+#+END_SRC
+
+客户端只需要挂载即可使用。
+#+BEGIN_SRC sh
+mount -t nfs -o proto=tcp,port=2049,nolock 192.168.1.67:/home/micky/share/nfs /mnt/
+#+END_SRC
+
+** 启动管理
+*** 通过USB Live CD安装grub
+#+BEGIN_SRC sh
+sudo mount /dev/sda5 /mnt
+sudo mount --bind /dev /mnt/dev
+sudo mount --bind /sys /mnt/sys
+sudo mount --bind /proc /mnt/proc
+sudo mount /dev/sdaX /mnt/boot          # only if you separate boot partition
+sudo chroot /mnt
+sudo grub-install --root-directory=/mnt /dev/sda
+#+END_SRC
+
+*** 通过GRUB rescue修复grub
+#+BEGIN_SRC sh
+grub> set pager=1
+
+grub> ls
+(hd0) (hd0,msdos2) (hd0,msdos1)
+
+grub> ls (hd0,1)/
+lost+found/ bin/ boot/ cdrom/ dev/ etc/ home/  lib/
+lib64/ media/ mnt/ opt/ proc/ root/ run/ sbin/
+srv/ sys/ tmp/ usr/ var/ vmlinuz vmlinuz.old
+initrd.img initrd.img.old
+
+grub> cat (hd0,1)/etc/issue
+Ubuntu 14.04 LTS \n \l
+
+grub> set root=(hd0,1)
+grub> linux /boot/vmlinuz-3.13.0-29-generic root=/dev/sda1
+grub> initrd /boot/initrd.img-3.13.0-29-generic
+grub> boot
+
+# 有些Linux系统已经有了超链接，可以采用更简单的写法
+grub> set root=(hd0,1)
+grub> linux /vmlinuz root=/dev/sda1
+grub> initrd /initrd.img
+grub> boot
+#+END_SRC
+
+如果GRUB rescue shell和通常的不一样，可以载入模块normal.mod和linux.mod。
+#+BEGIN_SRC sh
+grub rescue> set prefix=(hd0,1)/boot/grub
+grub rescue> set root=(hd0,1)
+grub rescue> insmod normal
+grub rescue> normal
+grub rescue> insmod linux
+grub rescue> linux /boot/vmlinuz-3.13.0-29-generic root=/dev/sda1
+grub rescue> initrd /boot/initrd.img-3.13.0-29-generic
+grub rescue> boot
+#+END_SRC
+
+最好在启动之后永久性的修复一下。
+#+BEGIN_SRC sh
+# update-grub
+Generating grub configuration file ...
+Found background: /usr/share/images/grub/Apollo_17_The_Last_Moon_Shot_Edit1.tga
+Found background image: /usr/share/images/grub/Apollo_17_The_Last_Moon_Shot_Edit1.tga
+Found linux image: /boot/vmlinuz-3.13.0-29-generic
+Found initrd image: /boot/initrd.img-3.13.0-29-generic
+Found linux image: /boot/vmlinuz-3.13.0-27-generic
+Found initrd image: /boot/initrd.img-3.13.0-27-generic
+Found linux image: /boot/vmlinuz-3.13.0-24-generic
+Found initrd image: /boot/initrd.img-3.13.0-24-generic
+Found memtest86+ image: /boot/memtest86+.elf
+Found memtest86+ image: /boot/memtest86+.bin
+done
+# grub-install /dev/sda
+Installing for i386-pc platform.
+Installation finished. No error reported.
+#+END_SRC
+
+* 参考资料
+1. [[http://askubuntu.com/questions/145241/how-do-i-run-update-grub-from-a-livecd][How do I run update-grub from a LiveCD]]
+2. [[http://howtoubuntu.org/how-to-repair-restore-reinstall-grub-2-with-a-ubuntu-live-cd][How to Repair, Restore, or Reinstall Grub 2 with a Ubuntu Live CD or USB]]
+3. [[https://www.linux.com/learn/tutorials/776643-how-to-rescue-a-non-booting-grub-2-on-linux/][How to Rescue a Non-booting GRUB 2 on Linux]]
