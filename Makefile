@@ -2,7 +2,7 @@
 
 jekyll_dir = build/jekyll
 menu = menu
-posts = algorithm network linux
+posts = algorithm network language linux
 
 posts:
 	puborg -j menu -o $(jekyll_dir)
