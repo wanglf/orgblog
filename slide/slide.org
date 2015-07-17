@@ -5,5 +5,6 @@
 
 * 演示文档列表
 
-** linux (1)
+** linux (2)
+- [[/slide/linux/linux-vfs-introduction.html][Linux VFS Introduction]]
 - [[/slide/linux/linux-kernel-coding-style.html][Linux内核编码规范简介]]
