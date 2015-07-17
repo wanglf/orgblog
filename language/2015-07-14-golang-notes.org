@@ -262,3 +262,29 @@ import  M  "sample/test"      // M.A
 import  .  "sample/test"      // A
 import  _  "sample/test"      // 仅执行初始化函数
 #+END_SRC
+
+* 学习资料
+1. 快速学习基本用法，推荐两本书。
+   - http://www.golang-book.com/，
+     PDF版：https://www.golang-book.com/assets/pdf/gobook.pdf。
+   - http://www.miek.nl/downloads/Go/Learning-Go-latest.pdf，
+     中文版：http://mikespook.com/learning-go/。
+
+   可以同步参考：https://gobyexample.com/。
+   如果精通C语言的话，这部分内容大约可以在一个星期内完成，
+   否则可能需要一个月以上的时间。
+   学习完这两部份内容就可以用golang解决基本问题了。
+
+2. 全面学习基础知识，推荐两本书。
+   - [[http://www.pdfiles.com/pdf/files/English/Desktop_Apps_Programming/The_GO_Programming_Language.pdf][The Go Programming Language]]，这本书有中文版，即[[http://pan.baidu.com/share/link?shareid%3D803045079&uk%3D2047156413][Go语言编程]]。
+   - [[http://ptgmedia.pearsoncmg.com/images/9780321774637/samplepages/0321774639.pdf][Programming in Go]]
+   - [[https://github.com/astaxie/build-web-application-with-golang][build a web with golang]]
+
+   由于目前go语言还处于成长期，所以还没有出现比较经典的著作，
+   学完这些基本知识以后就可以在实际使用中进一步去学习。
+#+HTML: <!--abstract-end-->
+
+3. 补充资料
+   - [[http://blog.csdn.net/wonderfogo/article/details/7096176][Go语言资料收集]]/[[https://github.com/wonderfo/wonderfogo/wiki][Go语言资料收集]]
+   - [[http://jan.newmarch.name/go/all.pdf][Network programming with Go]]
+
