@@ -219,6 +219,96 @@ ls -l | awk '{print $3,$9}'
 cat /etc/passwd | awk -F ':' 'BEGIN {print "name\tshell"}{print $1"\t"$7}'
 awk -F ':' '{printf("file:%10s %s %s: %s\n",FILENAME,NR,NF,$0)}' /etc/passwd
 #+END_SRC
+
+* 系统工具
+** 系统性能分析
+*** top
+该指令的命令行格式为：
+#+BEGIN_SRC sh
+top -hv|-bcHiOSs -d secs -n max -u|U user -p pid -o fld -w [cols]
+#+END_SRC
+| h/v | 帮助/版本信息                      |
+| b   | 批量模式                           |
+| d   | 延迟时间：如0.1表示0.1s            |
+| H   | 线程单独显示，而不是依附到进程内部 |
+| i   | 不显示空闲进程                     |
+| n   | 刷新指定帧数之后退出               |
+| o   | 用于更改排序优先级，+降低，-增加   |
+| p   | 指定观察进程                       |
+
+#+BEGIN_EXAMPLE
+top - 09:38:06 up 4 days, 16:58,  7 users,  load average: 0.72, 0.23, 0.19
+Tasks: 251 total,   3 running, 248 sleeping,   0 stopped,   0 zombie
+%Cpu(s): 26.7 us,  2.2 sy, 44.1 ni,  1.5 id, 25.3 wa,  0.0 hi,  0.2 si,  0.0 st
+KiB Mem:   5998076 total,  5797400 used,   200676 free,   127412 buffers
+KiB Swap:  7916540 total,    28824 used,  7887716 free.  3143600 cached Mem
+#+END_EXAMPLE
+- user/us :: 用户进程使用占比
+- sys/sy :: 内核进程使用占比
+- nic/ni :: nice用户进程使用占比
+- idle/id :: 空闲时间占比
+- io/wa :: 等待IO的占比
+- irq/hi :: 中断占比
+- sirq/si :: 软中断占比
+- steal/st :: 虚拟CPU使用占比，一般在虚拟机中才能看到
+
+#+BEGIN_EXAMPLE
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
+ 1286 root      20   0  362848  63316  32652 S   1.0  1.1  34:57.79 Xorg
+ 1855 micky     20   0 1136568  84168  24656 S   1.0  1.4  49:49.06 compiz
+23997 micky     20   0  556880  94936  18764 S   0.7  1.6   0:26.23 emacs
+   54 root      20   0       0      0      0 S   0.3  0.0   0:38.91 kworker/1:1
+23969 micky     20   0  593700  23772  13896 S   0.3  0.4   0:02.94 gnome-terminal
+24492 micky     20   0   29168   1768   1184 R   0.3  0.0   0:00.03 top
+#+END_EXAMPLE
+- PID :: 进程ID
+- USER :: effective USER名
+- PR :: 优先级
+- NI :: nice值
+- VIRT :: 虚拟内存大小
+- RES :: 驻留内存大小，即使用的不可交换物理内存
+- SHR :: 共享内存大小
+- %CPU :: CPU占用率
+- %MEM :: MEM占用率
+- TIME :: 已执行时间
+- COMMAND :: 命令行
+
+此外top命令还有很多交互式命令，如下所示：
+#+BEGIN_EXAMPLE
+4a. Global-Commands
+      <Ent/Sp> ?, =, 0,
+      A, B, d, E, e, g, h, H, I, k, q, r, s, W, X, Y, Z
+4b. Summary-Area-Commands
+      C, l, t, m, 1, 2, 3
+4c. Task-Area-Commands
+      Appearance:  b, J, j, x, y, z
+      Content:     c, f, F, o, O, S, u, U, V
+      Size:        #, i, n
+      Sorting:     <, >, f, F, R
+4d. Color-Mapping
+      <Ret>, a, B, b, H, M, q, S, T, w, z, 0 - 7
+5b. Commands-for-Windows
+      -, _, =, +, A, a, g, G, w
+5c. Scrolling-a-Window
+      C, Up, Dn, Left, Right, PgUp, PgDn, Home, End
+5d. Searching-in-a-Window
+      L, &
+#+END_EXAMPLE
+*** vmstat
+用于统计虚拟内存信息：
+#+BEGIN_SRC sh
+vmstat [options] [delay [count]]
+#+END_SRC
+| a           | 显示active/inactive内存            |
+| f           | 显示总forks数目                    |
+| m           | 显示slabinfo                       |
+| n           | 只显示header一次，而不是周期性刷新 |
+| s           | 以表格形式显示各事件统计信息       |
+| d           | 磁盘统计信息                       |
+| D           | 磁盘统计信息概要                   |
+| p partition | 分区统计信息                       |
+| S unit      | 指定单位，k/K，m/M                 |
+*** mpstat
 * 其它工具
 ** find
 find命令可以用 =-type= 指定文件类型：
