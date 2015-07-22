@@ -5,7 +5,7 @@ jekyll_dir = build/jekyll
 reveal_dir = $(abspath build/reveal)
 
 menu = menu slide
-posts = algorithm network language leaf linux
+posts = algorithm network kernel language leaf linux
 slide = linux
 
 posts:

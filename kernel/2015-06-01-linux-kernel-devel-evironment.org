@@ -1,0 +1,139 @@
+#+TITLE: Linux内核开发环境
+#+AUTHOR: Micky Ching
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: linux kernel
+
+* Linux简介
+#+HTML: <!--abstract-begin-->
+
+Linux基于UNIX开发，UNIX在1969年由Dennis Ritchie和Ken Thompson两位大师开发。
+Linux最早由Linus Torvalds于1991年开发。
+整个Linux系统由系统调用将用户空间和内核空间联系起来，
+用户通过系统调用来进入到内核态，
+以完成对设备的访问和控制。
+因此从功能上讲，内核主要是为用户提供接口，对计算机硬件资源进行管理。
+
+#+HTML: <!--abstract-end-->
+
+Linux具备一些非常好的技术支持，包括：
+- 支持动态载入和卸载内核模块
+- 支持SMP
+- 抢占式任务调度
+- 进程和线程不作区分
+- 面向对象设备模型、热插拔支持、用户空间设备文件系统sysfs
+
+** 构建内核
+最新的Linux内核可以通过如下方式获取：
+#+BEGIN_SRC sh
+git clone https://github.com/torvalds/linux
+#+END_SRC
+
+可以看到内核下包括如下文件和目录：
+| Documentation | 文档                     |
+| arch          | 架构相关代码             |
+| block         | 块IO层代码               |
+| crypto        | 加密API                  |
+| drivers       | 设备驱动                 |
+| firmware      | 一些驱动会用到的固件     |
+| fs            | 文件系统                 |
+| include       | 头文件                   |
+| init          | 内核启动代码             |
+| ipc           | 进程间通信代码           |
+| kernel        | 核心子系统，如进程调度   |
+| lib           | 常用库函数               |
+| mm            | 内存管理子系统           |
+| net           | 网络子系统               |
+| samples       | 样本示例代码             |
+| scripts       | 各种脚本                 |
+| security      | 安全模块                 |
+| sound         | 声音子系统               |
+| tools         | 开发内核实用工具         |
+| virt          | 虚拟化设施               |
+| COPYING       | 许可证                   |
+| CREDITS       | 对内核有较多贡献的人列表 |
+| Kbuild        | Kbuild                   |
+| Kconfig       | Kbuild配置文件           |
+| MAINTAINERS   | 各子系统维护者           |
+| Makefile      | 主Makefile               |
+
+在构建内核之前需要对内核进行配置，比如去掉不必要的模块，
+修改调试级别，如打开动态debug，打开锁调试等等。
+#+BEGIN_SRC sh
+make menuconfig
+#+END_SRC
+在menuconfig提供的界面中，有如下一些快捷键可以使用：
+| ?       | 查看帮助                                              |
+| SPC     | 用于对当前项选中：星号表示编译至内核、M表示编译为模块 |
+| ESC     | 退出                                                  |
+| =/=     | 搜索                                                  |
+| < >     | 左右移动                                              |
+| up down | 上下移动                                              |
+
+配置好内核即可使用如下命令编译安装：
+#+BEGIN_SRC sh
+make -j8                                # 8 means start 8 threads
+make modules_install
+make install
+#+END_SRC
+* 向内核提交代码
+如果发现内核中存在问题，或者性能可以提高，或者添加新的驱动等待，
+就可以向内核提交补丁。
+不过在提交之前必须做好验证工作，首先代码中不能有BUG，
+代码必须要安照内核标准风格来写，还要做些必要的静态检查等。
+
+关于代码风格，建议先阅读 [[/slide/linux/linux-kernel-coding-style.html][Linux kernel coding-style]]。
+代码风格的检查可以用如下指令检查：
+#+BEGIN_SRC sh
+scripts/checkpatch.pl *.patch
+#+END_SRC
+如果要检查的不是补丁而是文件，加一个参数 =-f= 即可，
+如果希望对出现问题的代码修复，可以加参数 =--fix= 或者 =--fix-inplace=。
+
+sparse是Linux常用的一个静态检查工具，ubuntu用户可以用apt-get安装，
+安装好之后在调用 =make= 时传递参数 =C=2= 即可。
+smatch也是一个静态检查工具，可以通过如下命令获取：
+#+BEGIN_SRC sh
+git clone git://repo.or.cz/smatch.git
+#+END_SRC
+安装好以后在调用 =make= 时传递参数 ~CHECK="smatch -p=kernel"~ 即可。
+
+当一切检查妥当之后就可以生成patch，一般采用如下命令生成：
+#+BEGIN_SRC sh
+git format-patch --cover-letter --thread --subject-prefix="PATCH v2" -5
+#+END_SRC
+如果只需要生成一个commit的patch，是不需要 =--cover-letter= 和 =--thread= 选项的。
+注意 =--cover-letter= 需要编辑以添加封面信息。
+如果第一次提交发现有问题，
+那么在第二次提交的时候就要加上 ~--subject-prefix="PATCH v2"~ 选项。
+
+准备好patch之后就可以通过如下命令向内核发送补丁了：
+#+BEGIN_SRC sh
+git send-email --smtp-server /usr/bin/msmtp \
+ --from yourname@email.com \
+ --to maintainer1@email1.com \
+ --to maintainer2@email2.com \
+ --cc devel@linuxdriverproject.org \
+ --cc linux-kernel@vger.kernel.org *.patch
+#+END_SRC
+很显然git用到msmtp工具来发送邮件，在ubuntu上可以通过apt-get安装，
+配置文件在 =~/.msmtprc=。大致格式如下：
+#+BEGIN_SRC sh
+# Set default values for all following accounts.
+defaults
+logfile ~/.msmtp.log
+
+# gmail
+account gmail
+protocol smtp
+host gmail.com
+from mickyching@gmail.com
+user mickyching@gmail.com
+password PASSWORD
+port 25
+auth ntlm
+syslog LOG_MAIL
+
+# Set a default account
+account default : gmail
+#+END_SRC
