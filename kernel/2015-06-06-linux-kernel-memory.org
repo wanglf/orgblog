@@ -1,0 +1,246 @@
+#+TITLE: Linux内核内存管理
+#+AUTHOR: Micky Ching
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: linux kernel memory
+
+* 基本概念
+** 内存管理
+#+HTML: <!--abstract-begin-->
+
+Linux内核将物理页作为基本管理单元，32位机上一页为4KB，
+64位机上一页为8KB。内核中用 =page= 来描述物理页。
+由于每个物理页都需要一个 =page= 来描述，所有该结构体必须十分紧凑，
+另外要注意它只是描述物理页，而不是物理页中的数据。
+- count :: 当有人使用该页面的时候，计数器就不为0，使用者可以是page cache，
+     private数据或进程页表。
+- virtual :: 用于指向页面的虚拟地址，对于高端内存来说，如果没有做映射，
+     该字段就指向NULL
+
+内核将内存分为三个区，不同的区有不同的职能。
+- ZONE_DMA :: 可以执行DMA
+- ZONE_NORMAL :: 包含通常意义上映射的页面
+- ZONE_HIGHMEM :: 该区域的内存没有做永久性映射
+
+#+HTML: <!--abstract-end-->
+
+*** 获取内存
+#+BEGIN_SRC c
+struct page *alloc_pages(gfp_t gfp_mask, unsigned int order);
+void *page_address(struct page *page);
+
+struct page *alloc_page(gfp_t gfp_mask);
+unsigned long get_zeroed_page(unsigned int gfp_mask);
+
+void __free_pages(struct page *page, unsigned int order);
+void free_pages(unsigned long addr, unsigned int order);
+void free_page(unsigned long addr);
+#+END_SRC
+
+#+BEGIN_SRC c
+void *kmalloc(size_t size, gfp_t flags);
+void kfree(const void *ptr);
+#+END_SRC
+
+gfp_mask有如下一些选项：
+
+| 标志位            | 功能                     |
+|-------------------+--------------------------|
+| __GFP_WAIT        | 可以休眠                 |
+| __GFP_HIGH        | 可以使用紧急内存池       |
+| __GFP_IO          | 可以执行IO操作           |
+| __GFP_FS          | 可以执行文件系统IO操作   |
+| __GFP_COLD        | 应该使用冷页             |
+| __GFP_NOWARN      | 不打印警告               |
+| __GFP_REPEAT      | 出错重试，重试仍可能出错 |
+| __GFP_NOFAIL      | 出错重试，不允许失败     |
+| __GFP_NORETRY     | 不重试                   |
+| __GFP_NOMEMALLOC  | 不使用保留内存           |
+| __GFP_HARDWALL    |                          |
+| __GFP_RECLAIMABLE | 标记页面为reclaimable    |
+| __GFP_COMP        | 添加复合页属性           |
+|-------------------+--------------------------|
+| __GFP_DMA         | 只从DMA区分配            |
+| __GFP_DMA32       | 只从DMA32区分配          |
+| __GFP_HIGHMEM     | 可以从高端内存分配       |
+
+下表的选项是实际中经常用到的，它们其实是上表中某些选项的组合。
+| GFP_ATOMIC   | 不允许休眠，可在中断上下文使用         |
+| GFP_NOWAIT   | 直接失败，而不尝试使用紧急内存池       |
+| GFP_NOIO     | 不允许磁盘IO                           |
+| GFP_NOFS     | 不允许文件系统IO                       |
+| GFP_KERNEL   | 常用选项，可能休眠                     |
+| GFP_USER     | 用于给用户空间进程分配                 |
+| GFP_HIGHUSER | 可以从高端内存分配，用于给用户进程分配 |
+| GFP_DMA      | 从DMA区分配                            |
+
+#+BEGIN_SRC c
+void *vmalloc(unsigned long size);
+void vfree(const void *addr);
+#+END_SRC
+vmalloc()只保证虚拟地址连续，而不保证物理地址连续，
+虽然大多情况下并不需要物理地址连续，但是出于性能上的考虑，
+内核一般不会用vmalloc，因为它需要设置页表项，并映射分散页。
+
+在有些情况下需要频繁的分配某些结构体，为了针对这样的情况做效率上的提升，
+内核引入了一个slab层，用于维护一个特定对象的缓存链表，
+当需要该对象时，可以直接从链表去取。
+这样做的好处有很多，对高频操作缓存本身能提高效率，也能够减少碎片。
+
+在逻辑层次上，一个cache就缓存一类对象，每个cache可以有多个slab，
+每个slab实际就是一个或多个物理页，每个slab由包含多个对象。
+
+#+BEGIN_SRC c
+struct kmem_cache * kmem_cache_create(const char *name, size_t size,
+	size_t align, unsigned long flags, void (*ctor)(void *));
+void *kmem_cache_alloc(struct kmem_cache *cachep, gfp_t flags);
+void kmem_cache_free(struct kmem_cache *cachep, void *objp);
+int kmem_cache_destroy(struct kmem_cache *cachep);
+#+END_SRC
+
+当然也可以直接从栈上获取内存，但是栈的大小固定为1页或2页，
+中断上下文有一个单独的栈，大小固定为1页。
+
+对于高端内存，不会自动映射，所以需要手动去映射，
+下面的函数用于将页面映射到内核地址空间。
+#+BEGIN_SRC c
+void *kmap(struct page *page);
+void kunmap(struct page *page);
+#+END_SRC
+
+PERCPU数据存储在数组中，将index关联到一个对应的CPU，
+因为只能有一个CPU访问，所以不需要关注并发问题。
+#+BEGIN_SRC c
+unsigned long my_percpu[NR_CPUS];
+int cpu;
+
+cpu = get_cpu();			/* disable kernel preemption */
+my_percpu[cpu]++;
+put_cpu();				/* enable kernel preemption */
+#+END_SRC
+上面的代码禁用了抢占，所以不要长期禁止抢占。
+之所以要禁止抢占，因为如果拿到cpu号又调度出去，那么此时的cpu号就是错的。
+
+#+BEGIN_SRC c
+DEFINE_PER_CPU(type, name);
+get_cpu_var(name)++;
+put_cpu_var(name);
+#+END_SRC
+
+#+BEGIN_SRC c
+void *alloc_percpu(type);
+get_cpu_var(ptr);
+/* do something on ptr */
+put_cpu_var(ptr);
+void free_percpu(const void *);
+#+END_SRC
+** 进程地址空间
+内核不仅要管理自己的内存，还需要管理用户空间进程的内存，
+这部分内存称之为进程地址空间。
+Linux本身是一个虚拟化内存管理系统，也就是说每个进程从自己的视觉来看，
+就像是独占整个系统的内存资源一样。并且可以麻痹进程，
+让进程可以看到比物理内存大的内存。
+
+进程地址空间作为一个平坦模型展示，意味着进程在32位机上可以访问0-4GB空间，
+有些操作系统提供分段地址空间，也就是由多个段组成。
+不过现代操作系统都有平坦模型。
+虽然进程地址空间范围是0-4GB，但是有些地方是不允许访问的。
+允许访问的区间为0x08048000-0x0804c000，被称之为内存区。
+当进程试图访问不允许访问的内存时，内核就会杀死进程，
+用户就能看到经典提示 =Segmentation Fault=。
+内存区分为如下几个部分：
+- text :: 可执行文件代码
+- data :: 已初始化全局变量
+- bss :: 全称block started by symbol，全0页，未初始化全局变量
+- stack :: 全0页
+- additon :: 额外的text、data、bss段，用于共享库
+- files :: 内存映射的文件
+- shared :: 共享内存段
+- anonymous :: 匿名内存映射，例如关联malloc
+
+内核用内存描述符来表示进程地址空间，即 =mm_struct= 结构。
+- mmap/mm_rb :: 前者是一个单向链表，后者是一个二叉树，
+     两个数据结构都是用来描述所有内存的，
+     只不过一个擅长遍历，一个擅长查询
+- mmlist :: 通过该节点将所有 =mm_struct= 接入到全局链表 =init_mm=，
+     全局链表受 =mmlist_lock= 保护
+
+进程可以通过在clone()是传递选项 =CLONE_VM= 来共享内存，
+这样就导致新产生的是线程而不是进程，这就是线程和进程的唯一区别。
+内核线程是不需要的进程地址空间的，因此不需要关联内存描述符，
+之所以不要，是因为内核线程不需要访问用户空间存储。
+
+内核中用 =vm_area_struct= 来表示内存区，内存区通常被称为虚拟内存区VMA。
+每个 =vm_erea_struct= 描述一个特定的内存区，如内存映射文件、进程栈等。
+一个 =vm_erea_struct= 所表示的内存范围由 =(vm_start, vm_end]= 来描述。
+如果两个线程共享地址空间，那么两个线程共享所有的 =vm_erea_struct=。
+前面提到 =mmap/mm_rb= 是用来描述所有内存的，它们的节点就是 =vm_erea_struct=。
+一个进程的内存区可以通过文件 =/proc/pid/maps= 查看。
+文件格式为：
+#+BEGIN_EXAMPLE
+start-end         perm offset   major:minor inode  file
+00400000-0041f000 r-xp 00000000 00:11       25870  /usr/lib/...
+0061e000-0061f000 r--p 0001e000 00:11       25870  /usr/lib/...
+0061f000-00620000 rw-p 0001f000 00:11       25870  /usr/lib/...
+01b37000-01ecc000 rw-p 00000000 00:00       0      [heap]
+#+END_EXAMPLE
+另外也可以通过程序pmap来查看一个进程的内存空间信息。
+#+BEGIN_SRC sh
+pmap [options] pid [...]
+#+END_SRC
+*** 页表
+虽然用户进程只会操作虚拟地址，但是处理器实际上是操作物理地址。
+所以处理器真正操作物理地址之前都需要一道转换程序，
+这种转换是通过查询页表来完成的。
+页表的功能就是完成对虚拟地址到物理地址的转换。
+Linux采用三级页表进行转换，分别是PGD、PMD、PTE，
+即全局目录，中间目录，目录项。在大多数机器上，页表查询都是由硬件来完成的。
+每个进程有自己独立的页表，线程共享。
+为了能够加速查询过程，处理器实现了TLB，Translation Lookaside Buffer，
+就是一个cache。
+
+** 页缓存
+页缓存page cache本质上应该叫disk cache，因为缓存的目的起始是为了减少磁盘IO。
+用户在向磁盘写入数据的时候，实际上是写入到内存中，
+内核定期将内存中的数据更新到磁盘，称之为回写page writeback。
+同样，当用户要读取数据的时候，可以直接从内存得到需要的数据。
+
+在内存不够用的时候就需要回收部分缓存，LRU是一种基本的回收机制，
+将最后访问的文件插入到LRU链表，当内存不够用的时候就释放LRU中很久没有访问的文件。
+这样的方法其实还是有缺陷的，因为有些文件用一次就不用了，
+有些文件会频繁使用。
+Linux使用的LRU变体，即双链表策略，一个活动链表，一个不活动链表，
+当一个不活动链表中的文件被访问时，它就被加入到活动链表。
+当活动链表太长的时候，其尾部节点就扔到不活动链表，这种方法记位LRU/2。
+
+一个页缓存中的页可以是物理上不连续的磁盘块，Linux对page cache的设计下了大功夫，
+只要是基于页面的对象都可以缓存，包括文件、内存映射等等。
+Linux用 =address_space= 来描述缓存页，
+一个文件可以有多个 =vm_area_struct= 但是只有一个 =address_space=，
+因为一个文件可以有多个虚拟地址，但是只有一个物理内存。
+
+内核在做IO操作之前必须检查是否有缓存页，所以要能具有快速搜索能力，
+在每个 =address_space= 中都有一个radix tree，
+内核利用该数据结构来进行页面查找。
+在早期内核是通过哈希表查找的，使用全局哈希表有如下一些问题：
+1. 访问全局变量需要锁，高频率的获取锁是有效率问题的
+2. 一个巨大的哈希表是没有必要的，因为我们只需要查找和文件关联的页
+3. 当页面不存在的时候效率很低，因为你需要变量冲突链表才知道不存在
+4. 全局哈希很占空间
+
+除了这里提到的页缓存，对于块设备来说，还有一个块缓存，
+在通用块层提供了从内存块到物理块的映射。
+也就是对块的IO操作必须以单个磁盘块为单位，
+内核通过 =bread()= 来从磁盘读取一个块。
+
+为了能够将缓存页回写到磁盘上，内核提供了一个刷新线程。
+在如下几种情况下去执行回写操作：
+1. 内存紧张，需要释放部分缓存
+2. 脏数据缓存时间到期
+3. 用户调用sync或fsync
+
+此外Linux还支持一种称为laptop的模式，
+将 =/proc/sys/vm/laptop_mode= 设置为1可以打开。
+该模式能够省电，其工作原理是当一个文件缓存时间到期后，
+刷新所有到期文件。当然必须要配置到期时间足够长，
+如10分钟，这样的后果就是一旦崩溃，系统可能就挂了。
