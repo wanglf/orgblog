@@ -15,10 +15,13 @@ posts:
 latex:
 	puborg -l $(posts)
 
+beamer:
+	cd slide && puborg -l $(slide)
+
 slide:
 	cd slide && puborg -o $(reveal_dir) -r $(slide)
 
-all: slide posts latex
+all: slide posts latex beamer
 
 clean:
 	puborg -c $(menu) $(posts)
