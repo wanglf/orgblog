@@ -1,0 +1,307 @@
+#+TITLE: Linux MMC Subsystem
+#+AUTHOR: Micky Ching
+#+EMAIL:
+#+OPTIONS: H:3 toc:2 ^:nil
+#+LATEX_CLASS: latex-slide
+
+* 简介
+** 基本概念
+*** 简要说明
+- 内核源代码请参考linux-4.0
+- 侧重介绍软件结构，简要介绍协议
+
+*** 系统分层结构
+
+#+ATTR_LATEX: :float t :placement [H] :width 8cm
+file:fig/mmc-subsys/mmc-in-linux.png
+
+*** MMC分层结构
+
+#+ATTR_LATEX: :float t :placement [H] :width 8cm
+file:fig/mmc-subsys/mmc-driver-frame.png
+
+*** 分层结构
+#+BEGIN_SRC makefile
+  obj-$(CONFIG_MMC)               += core/
+  obj-$(CONFIG_MMC)               += card/
+  obj-$(subst m,y,$(CONFIG_MMC))  += host/
+#+END_SRC
+
+- core :: 核心层完成协议部分功能
+- card :: 卡层提供块设备驱动
+- host :: 主机层由各控制器厂商提供特定代码
+
+*** 核心层
+#+BEGIN_SRC makefile
+  obj-$(CONFIG_MMC)       += mmc_core.o
+  mmc_core-y := core.o bus.o host.o mmc.o mmc_ops.o sd.o  \
+             sd_ops.o sdio.o sdio_ops.o sdio_bus.o        \
+             sdio_cis.o sdio_io.o sdio_irq.o quirks.o     \
+             slot-gpio.o
+#+END_SRC
+- mmc_core :: 最终生成mmc_core.ko模块
+- core.c :: 传输中间件，上传下达
+- bus.c :: 注册mmc_bus_type
+- host.c :: 通用host接口，供厂商使用
+
+*** 卡层
+#+BEGIN_SRC makefile
+  obj-$(CONFIG_MMC_BLOCK)         += mmc_block.o
+  mmc_block-objs                  := block.o queue.o
+  obj-$(CONFIG_MMC_TEST)          += mmc_test.o
+
+  obj-$(CONFIG_SDIO_UART)         += sdio_uart.o
+#+END_SRC
+- mmc_block :: 最终生成mmc_block.ko模块
+- block.c :: 块设备驱动
+- queue.c :: 块设备请求队列
+
+*** 主机层
+#+BEGIN_SRC makefile
+  obj-$(CONFIG_MMC_SDHCI)         += sdhci.o
+  obj-$(CONFIG_MMC_SDHCI_PCI)     += sdhci-pci.o
+  ...
+#+END_SRC
+- sdhci.c :: SDHCI(SD Host Controller Interface)
+
+*** 数据结构
+
+#+ATTR_LATEX: :float t :placement [H] :width 9cm
+file:fig/mmc-subsys/data-struct.png
+
+
+* MMC结构视图
+** MMC总线
+*** MMC总线
+#+BEGIN_SRC cpp
+  static struct bus_type mmc_bus_type = {
+      .name           = "mmc",
+      .dev_groups     = mmc_dev_groups,
+      .match          = mmc_bus_match,
+      .uevent         = mmc_bus_uevent,
+      .shutdown       = mmc_bus_shutdown,
+      .pm             = &mmc_bus_pm_ops,
+  };
+#+END_SRC
+- 一旦注册就能看到目录 =/sys/bus/mmc=
+- 这里不再初始化probe/remove
+
+*** 设备属性组
+
+#+ATTR_LATEX: :float t :placement [H] :width 8cm
+file:fig/mmc-subsys/attr-groups.png
+
+*** 总线操作
+- 匹配设备驱动
+  - mmc_bus_match 返回1，即一个driver匹配所有设备
+- 总线uevent
+  - 添加环境变量：MMC_TYPE、MMC_NAME、MODALIAS
+  - 注意这个函数不会单独调用，添加卡的时候调用
+
+*** 总线操作
+- 关机动作
+  - 回调driver的shutdown关机
+  - 回调host->bus_ops的shutdown关机
+
+- 电源管理
+  - 总线suspend/resume
+  - RPM suspend/resume
+
+** MMC设备
+*** 插卡动作
+
+#+ATTR_LATEX: :float t :placement [H] :width 8cm
+file:fig/mmc-subsys/card-insert-irq.png
+
+*** mmc_rescan
+- 当插拔卡事件产生时由主机层调用这个函数
+- 该函数启动扫描工作，从400kHz扫描到100kHz
+- 按照SDIO、SD、MMC的顺序尝试初始化
+- 当SD初始化成功之后就会调用 =mmc_add_card=
+#+BEGIN_SRC cpp
+int mmc_attach_sdio(struct mmc_host *host);
+int mmc_attach_sd(struct mmc_host *host);
+int mmc_attach_mmc(struct mmc_host *host);
+#+END_SRC
+
+*** SDIO初始化
+
+**** figure                                                                  :BMCOL:
+:PROPERTIES:
+:BEAMER_col: 0.3
+:END:
+#+ATTR_LATEX: :height 7cm
+file:fig/mmc-subsys/sdio-init.png
+
+**** description                                                             :BMCOL:
+:PROPERTIES:
+:BEAMER_col: 0.7
+:END:
+- OCR :: CMD5会发送两次，一次获取，一次设置
+- 18V :: 如果支持低电压就会切电压，即CMD11
+- SELECT :: 选中，即CMD7
+- CCCR :: Card Common Control Registers
+- CIS :: Card Information Structure
+
+
+*** SD初始化
+
+**** figures                                                                 :BMCOL:
+:PROPERTIES:
+:BEAMER_col: 0.3
+:END:
+#+ATTR_LATEX: :height 7cm
+file:fig/mmc-subsys/sd-init.png
+
+**** description                                                             :BMCOL:
+:PROPERTIES:
+:BEAMER_col: 0.7
+:END:
+- CID :: Card IDentification，CMD2
+- CSD :: Card Specification Data，CMD9
+- DSR :: Driver Stage Register，CMD4
+- SCR :: SD Configuration Register，ACMD51
+- SSR :: SD Status Register，ACMD13
+- SWITCH :: switch function，CMD6
+- TUNING :: CMD19
+
+*** MMC设备
+- 代表MMC设备的数据结构是mmc_card
+- 卡设备由mmc_add_card添加
+  - 当SD/MMC/SDIO卡初始化成功时调用
+
+** MMC驱动
+*** MMC驱动
+#+BEGIN_SRC cpp
+  static struct device_driver mmc_driver = {
+      .name           = "mmcblk",
+      .pm             = &mmc_blk_pm_ops,
+      .probe          = mmc_blk_probe,
+      .remove         = mmc_blk_remove,
+      .shutdown       = mmc_blk_shutdown,
+  };
+#+END_SRC
+
+*** mmc_blk_probe
+
+#+ATTR_LATEX: :float t :placement [H] :width 3cm
+file:fig/mmc-subsys/mmc-blk-probe.png
+
+*** mmc_queue_thread
+- blk_fetch_request 从通用块层的提取请求
+- 通过 =issue_fn= 处理请求
+- 这个线程不会一直跑，没有请求就会进入休眠
+  - mmc_request_fn 到来时会唤醒线程
+
+*** mmc_queue_thread
+
+#+ATTR_LATEX: :float t :placement [H] :width 4cm
+file:fig/mmc-subsys/mmc-request-fn.png
+
+*** mmc_blk_issue_rq
+
+#+ATTR_LATEX: :float t :placement [H] :width 10cm
+file:fig/mmc-subsys/mmc-issue-rq.png
+
+*** mmc_blk_issue_rq
+- 这个函数实际是个分支器
+- mmc_blk_issue_rw_rq 处理读写请求
+  - mmc_blk_rw_rq_prep 准备请求，如设置CMD/DATA等
+  - mmc_start_req 发送请求
+- mmc_blk_issue_discard_rq 处理删除请求
+  - mmc_erase 用于擦除
+
+** MMC主机控制器
+*** host driver
+- 主机层一般也是一个driver
+  - 具体是什么类型的driver由平台决定
+- 在probe中需要添加mmc host
+  - 通过core/host.c中的通用接口添加
+  - 注册host回调函数，供core层使用
+
+*** host ops
+#+BEGIN_SRC cpp
+  static const struct mmc_host_ops sdhci_ops = {
+      .request        = sdhci_request,
+      .set_ios        = sdhci_set_ios,
+      .get_cd         = sdhci_get_cd,
+      .get_ro         = sdhci_get_ro,
+      .hw_reset       = sdhci_hw_reset,
+      .enable_sdio_irq = sdhci_enable_sdio_irq,
+      .start_signal_voltage_switch    = sdhci_..._switch,
+      .execute_tuning                 = sdhci_execute_tuning,
+      .card_event                     = sdhci_card_event,
+      .card_busy      = sdhci_card_busy,
+  };
+#+END_SRC
+
+*** register ops
+- ioremap映射资源地址
+- 利用ioread<n>和iowrite<n>对映射地址操作
+
+*** DMA transfer
+- dma_alloc_coherent分配一致映射地址
+- 散列表和DMA描述表对应
+- 将描述表写入内存地地址，厂商可自定义描述表
+- 操作控制寄存器开启数据传输
+
+** MMC请求处理
+*** 命令传输
+- 设置好cmd数据之后即可由mmc_wait_for_cmd发送给主机
+
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/mmc-subsys/mmc-send-cmd.png
+
+*** 带数据命令传输
+
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/mmc-subsys/mmc-send-cmd-with-data.png
+
+*** 数据传输
+- 块设备驱动层调用mmc_start_req传输数据
+
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/mmc-subsys/mmc-send-data.png
+
+*** 长数据传输（512nBytes）
+**** figure                                                                     :BMCOL:
+:PROPERTIES:
+:BEAMER_col: 0.4
+:END:
+#+ATTR_LATEX: :height 6cm
+file:fig/mmc-subsys/mmc-long-data.png
+
+**** description                                                                :BMCOL:
+:PROPERTIES:
+:BEAMER_col: 0.6
+:END:
+- CMD: 17 18 24 25 53
+
+*** 短数据传输（<512Bytes）
+**** figure                                                                     :BMCOL:
+:PROPERTIES:
+:BEAMER_col: 0.4
+:END:
+#+ATTR_LATEX: :height 4cm
+file:fig/mmc-subsys/mmc-short-data.png
+
+**** description                                                                :BMCOL:
+:PROPERTIES:
+:BEAMER_col: 0.6
+:END:
+- CMD: 6(64Bytes) 53(4nBytes)
+
+*** 非对齐长数据传输（>512Bytes）
+
+#+ATTR_LATEX: :float t :placement [H] :width 10cm
+file:fig/mmc-subsys/mmc-arbit-data.png
+
+* 参考资料
+** 参考资料
+*** 书籍演示
+- [[http://free-electrons.com/doc/block_drivers.pdf][Block device drivers]]
+
+*** 网络博客
+- [[http://www.cnblogs.com/cslunatic/p/3678045.html][Linux SD/MMC/SDIO驱动分析]]
+- [[http://blog.chinaunix.net/uid-22174347-id-1786945.html][嵌入式Linux之我行——S3C2440上MMC/SD卡驱动实例开发讲解(一)]]
+- [[http://blog.chinaunix.net/uid-22174347-id-1786946.html][嵌入式Linux之我行——S3C2440上MMC/SD卡驱动实例开发讲解(二)]]
