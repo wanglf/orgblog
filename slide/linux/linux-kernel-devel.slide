@@ -1,0 +1,259 @@
+#+TITLE: Linux kernel development
+#+AUTHOR: Micky Ching
+#+EMAIL:
+#+OPTIONS: H:3 ^:nil toc:2
+#+LATEX_CLASS: latex-slide
+
+* Write Linux driver
+** Write a kernal module
+*** kernel module structure
+#+BEGIN_SRC c
+#include <linux/module.h>
+#include <linux/moduleparam.h>
+#include <linux/init.h>
+#+END_SRC
+- module_init: int func(void)
+- module_exit: void func(void)
+
+*** kernel module parameter
+#+BEGIN_SRC c
+int scull_major = SCULL_MAJOR;
+module_param(scull_major, int, S_IRUGO);
+#+END_SRC
+#+BEGIN_SRC sh
+insmod hello.ko scull_major=123
+#+END_SRC
+
+** Write a char device driver
+*** define device operations
+- file_operations :: provide func to operate device
+
+#+BEGIN_SRC c
+struct file_operations scull_fops = {
+	.owner =    THIS_MODULE,
+	.llseek =   scull_llseek,
+	.read =     scull_read,
+	.write =    scull_write,
+	.unlocked_ioctl = scull_ioctl,
+	.open =     scull_open,
+	.release =  scull_release,
+};
+#+END_SRC
+
+*** alloc ID and register operations
+- register =dev_t= major/minor
+#+BEGIN_SRC sh
+ls
+crw-rw-rw-  1 root  root      1,   9 May 28 09:42 urandom
+#+END_SRC
+
+#+BEGIN_SRC c
+int register_chrdev_region(dev_t from, unsigned count,
+	const char *name);
+void cdev_init(struct cdev *cdev,
+	const struct file_operations *fops);
+int cdev_add(struct cdev *p, dev_t dev, unsigned count);
+#+END_SRC
+
+*** free resource when unload module
+#+BEGIN_SRC c
+void cdev_del(struct cdev *p);
+void unregister_chrdev_region(dev_t from, unsigned count);
+#+END_SRC
+
+** Advanced topic
+*** Memory manipulation
+#+BEGIN_SRC c
+static void *kmalloc(size_t size, gfp_t flags);
+void kfree(const void *addr);
+#+END_SRC
+- GFP_KERNEL :: may sleep
+- GFP_ATOMIC :: no sleep, may use emergency
+- GFP_NOWAIT :: no sleep, not use emergency
+*** IO manipulation
+#+BEGIN_SRC c
+void __iomem *ioremap(unsigned long port, unsigned long size);
+void iounmap(volatile void __iomem *addr);
+#+END_SRC
+
+#+BEGIN_SRC c
+u8 readb(const volatile void __iomem *addr);
+u16 readw(const volatile void __iomem *addr);
+u32 readl(const volatile void __iomem *addr);
+void writeb(u8 b, volatile void __iomem *addr);
+void writew(u16 b, volatile void __iomem *addr);
+void writel(u32 b, volatile void __iomem *addr);
+#+END_SRC
+
+*** DMA manipulation
+#+BEGIN_SRC c
+void *dma_alloc_coherent(struct device *dev, size_t size,
+	dma_addr_t *dma, gfp_t gfp);
+void dma_free_coherent(struct device *dev, size_t size,
+	void *ptr, dma_addr_t dma);
+#+END_SRC
+- ptr :: used to save DMA description table
+
+*** mutex sync method
+- Only one task can hold the mutex at a time
+- Whoever locked a mutex must unlock it
+- Recursive locks and unlocks are not allowed
+- A process cannot exit while holding a mutex
+- Can't be used at atomic context
+- A mutex can be managed only via the official API
+
+*** mutex sync API
+#+BEGIN_SRC c
+void mutex_init(struct mutex *mutex);
+void mutex_lock(struct mutex *mutex);
+int mutex_trylock(struct mutex *lock);	/* 1 - success, 0 - failed */
+void mutex_unlock(struct mutex *mutex);
+#+END_SRC
+
+*** spinlock sync method
+- Can't sleep while holding lock
+- Can't preempted while holding lock
+
+*** spinlock sync API
+#+BEGIN_SRC c
+void spin_lock_init(spinlock_t *lock);
+void spin_lock(spinlock_t *lock);
+void spin_unlock(spinlock_t *lock);
+void spin_lock_irqsave(spinlock_t *lock, unsigned long flags);
+void spin_unlock_irqrestore(spinlock_t *lock, unsigned long flags);
+#+END_SRC
+- if lock not used in ISR, disable IRQ is not need
+
+*** kernel thread
+#+BEGIN_SRC c
+int kthread_func(void *data);
+struct task_struct *kthread_run(kthread_func func,
+	void *param, const char *name);
+int kthread_stop(struct task_struct *kthread);
+bool kthread_should_stop(void);
+#+END_SRC
+
+*** wait for some time
+#+BEGIN_SRC c
+void msleep(unsigned int msecs);
+void usleep_range(unsigned long min, unsigned long max);
+#+END_SRC
+
+*** wait for completion
+#+BEGIN_SRC c
+void init_completion(struct completion *x);
+void reinit_completion(struct completion *x)
+void wait_for_completion(struct completion *x);
+long wait_for_completion_interruptible_timeout(struct completion *x,
+	unsigned long timeout);
+void complete(struct completion *x);
+#+END_SRC
+
+*** wait for event
+#+BEGIN_SRC c
+void init_waitqueue_head(wait_queue_head_t *wq);
+void wait_event(wait_queue_head_t *wq, bool cond);
+void wake_up(wait_queue_head_t *wq);
+int wait_event_interruptible(wait_queue_head_t *wq, bool cond);
+void wake_up_interruptible(wait_queue_head_t *wq);
+#+END_SRC
+
+* Kernel build system
+** Write build rules
+*** write kernel Makefile
+#+BEGIN_SRC makefile
+obj-y += mmc
+obj-$(CONFIG_MMC) += core/
+obj-$(CONFIG_MMC_BLOCK) += mmc_block.o
+mmc_block-objs := block.o queue.o
+#+END_SRC
+
+*** write Kconfig
+#+BEGIN_SRC makefile
+comment "MMC/SD/SDIO Card Drivers"
+
+config MMC_BLOCK
+	tristate "MMC block device driver"
+	depends on BLOCK
+	default y
+	help
+	  Say Y here to enable the MMC block device driver support...
+
+config MMC_BLOCK_MINORS
+	int "Number of minors per block device"
+	depends on MMC_BLOCK
+	range 4 256
+	default 8
+	help
+	  ...
+#+END_SRC
+
+*** make config for building
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 8cm
+file:fig/kdevel/menuconfig.png
+#+END_CENTER
+
+*** build kernel and install
+#+BEGIN_SRC sh
+make
+make install
+make clean
+make M=drivers/mmc
+make mrproper
+git clean -fdx
+#+END_SRC
+
+* Submit patch to kernel
+** Steps for submit patch
+*** config email client for git
+#+BEGIN_SRC sh
+$ cat .msmtprc
+# Set default values for all following accounts.
+defaults
+logfile ~/.msmtp.log
+
+# account1
+account account1
+protocol smtp
+host mail.server.com.cn
+from yourname@mail.com.cn
+user yourname@mail.com.cn
+password xxxxxx
+port 25
+auth ntlm
+syslog LOG_MAIL
+
+# Set a default account
+account default: account1
+#+END_SRC
+
+*** prepare patch for submit
+
+#+BEGIN_SRC sh
+git format-patch -1
+git format-patch --thread --cover-letter -4
+git format-patch --thread --cover-letter --subject-prefix="PATCH v2" -4
+#+END_SRC
+
+*** check patch before submit
+#+BEGIN_SRC sh
+./scripts/checkpatch.pl *.patch
+make C=2 M=drivers/mmc                  # need sparse
+#+END_SRC
+
+*** send patch to linux kernel
+#+BEGIN_SRC sh
+git send-email --smtp-server /usr/bin/msmtp \
+--from yourname@email.com \
+--to devel@linuxdriverproject.org \
+--to linux-kernel@vger.kernel.org \
+--cc gregkh@linuxfoundation.org \
+--cc ... \
+*.patch
+#+END_SRC
+#+BEGIN_SRC sh
+./scripts/get_maintainer.pl [options] patchfile
+./scripts/get_maintainer.pl [options] -f file|directory
+#+END_SRC
+
