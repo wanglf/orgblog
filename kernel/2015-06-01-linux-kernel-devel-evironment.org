@@ -76,6 +76,115 @@ make -j8                                # 8 means start 8 threads
 make modules_install
 make install
 #+END_SRC
+* 驱动开发
+** 编译环境
+设备驱动都放在 =drivers/= 目录下，下面又细分为不同类型的设备驱动。
+假定要写一个字符设备驱动，需要修改 =drivers/char/Makefile= 以编译新加的驱动。
+#+BEGIN_SRC makefile
+obj-$(CONFIG_FISHING_POLE) += fishing.o
+fishing-objs := fishing-main.o fishing-line.o
+EXTRA_CFLAGS += -DTITANIUM_POLE
+#+END_SRC
+由于内核是可以配置的，所以需要添加配置选项，修改 =drivers/char/Kconfig=：
+#+BEGIN_SRC makefile
+config FISHING_POLE
+	depends on EXAMPLE_DRIVERS && !NO_FISHING_ALLOWED
+	select BAIT
+	tristate "Fish Master 3000 support"
+	default n
+	help
+	  If you say Y here, support for the Fish Master 3000
+#+END_SRC
+当然你也可以创建自己的子目录，子目录中Makefile和Kconfig的写法可以参考父目录。
+
+如果只想写一个不加入到内核的驱动，可以这么写Makefile：
+#+BEGIN_SRC makefile
+obj-m += fishing.o
+fishing-objs := fishing-main.o fishing-line.o
+EXTRA_CFLAGS += -DTITANIUM_POLE
+#+END_SRC
+编译的时候这么写：
+#+BEGIN_SRC sh
+make -C /kernel/source/location SUBDIRS=$PWD modules
+make modules_install                    # install module
+depmod -A                               # add to dependency
+#+END_SRC
+
+#+BEGIN_SRC sh
+insmod module.ko                        # insert module
+rmmod module                            # remove module
+modprobe module [parameters]            # insert module
+modprobe –r modules                     # remove module
+#+END_SRC
+** 设备驱动
+Linux对设备分为三种类型，块设备、字符设备、网络设备。
+块设备以固定块长作为访问单位。字符设备不可寻址，本质上就是字节流。
+网络设备通过物理适配器提供访问网络的接口。
+并不是说设备驱动就一定是驱动物理设备，也可是虚拟设备，
+例如 =/dev/urandom= 就是一个随机数发生器。
+
+设备驱动被写作一个模块，类似于用户空间的一个程序。
+如果编译时以模块形式生成，那么系统启动后可以动态加载或卸载。
+一个模块的框架如下所示：
+#+BEGIN_SRC c
+#include <linux/init.h>
+#include <linux/module.h>
+
+static int hello_init(void)		/* like main */
+{
+	printk(KERN_ALERT "I bear a charmed life.\n");
+	return 0;
+}
+static void hello_exit(void)		/* for release resource */
+{
+	printk(KERN_ALERT "Out, out, brief candle!\n");
+}
+module_init(hello_init);
+module_exit(hello_exit);
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Shakespeare");
+MODULE_DESCRIPTION("A Hello, World Module");
+#+END_SRC
+
+一个模块可以有参数，也可以导出接口，
+添加参数要使用内核提供的 =module_param= 系列接口，
+导出接口要要使用 =EXPORT_SYMBOL_GPL= 接口。
+所谓导出接口，就是提供一个函数可以被其它模块使用。
+
+** Linux设备模型
+提到设备模型就不得不说道如下几个类：
+- kobject :: 可以看作设备基类，每个设备都应该有一个kobject
+- kref :: 在kobject中用kref来进行引用计数，也就是说kref提供了一个通用计数机制
+- ktype :: 如果我们把kobject中其它字段看作数据成员，那么ktype就是方法成员
+- kset :: 同类对象的集合，ktype是为了让同类对象共享方法，
+     而kset只是一个容器，代表一个子系统
+
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/kdevel/kset.png
+#+END_CENTER
+
+内核空间的设备和驱动信息通过 =sysfs= 文件系统导出到 =/sys= 目录。
+该目录下各子目录说明如下：
+- block :: 系统注册的所有块设备
+- bus :: 系统中的总线
+- class :: 设备分类，按功能分类
+- dev :: 注册的设备节点
+- devices :: 导出设备模型
+- firmware :: 底层子系统，如ACPI, EDD, EFI等
+- fs :: 注册的文件系统
+- kernel :: 内核配置和状态信息
+- modules :: 载入模块信息
+- power :: 电源管理数据
+
+向sysfs添加设备节点是通过kobject来实现的，每一个添加的kobject对应一个目录。
+而文件则是通过属性添加，可以认为一个文件表示一个属性，
+添加属性一般要实现 =show()= 和 =store()= 两个方法，用于对文件读取和写入。
+如果利用好sysfs提供的属性，可以避免使用不安全的ioctl以及混乱的 =/proc= 系统。
+
+内核事件通过uevent发送给用户，而uevent也是通过kobject来发送的。
+当然要完整的工作，也离不开用户空间的监听程序。
+
 * 向内核提交代码
 如果发现内核中存在问题，或者性能可以提高，或者添加新的驱动等待，
 就可以向内核提交补丁。
