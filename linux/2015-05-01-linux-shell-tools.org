@@ -339,6 +339,7 @@ find命令可以用 =-type= 指定文件类型：
 #+BEGIN_SRC sh
 find . -print                           # print all files in curdir
 ls -ld `find . -print`                  # print all files long list
+find . -name "*.c" or -name "*.cpp"     # find c/c++ files
 #+END_SRC
 
 * 参考资料
