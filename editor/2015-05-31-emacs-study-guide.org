@@ -40,13 +40,13 @@ brew install emacs --with-cocoa
 |---------------+-------------------|
 | orgmode       | [[http://orgmode.org/][Org mode]]          |
 | magit         | [[http://magit.vc/manual/magit/][Magit User Manual]] |
+| w3m           | [[http://w3m.sourceforge.net/MANUAL][w3m MANUAL]]        |
 | ibuffer       | 缓冲区管理        |
 | gtags         | 源代码跳转        |
 | snippet       | 输入模板          |
 | auto-complete | 自动补全          |
 | ecb           | 窗口管理/导航     |
 | xterm         | 使用终端          |
-| w3m           | 浏览网页          |
 | ido           | 命令补全          |
 
 * 参考资料
