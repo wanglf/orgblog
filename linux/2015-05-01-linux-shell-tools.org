@@ -246,8 +246,8 @@ KiB Swap:  7916540 total,    28824 used,  7887716 free.  3143600 cached Mem
 - user/us :: 用户进程使用占比
 - sys/sy :: 内核进程使用占比
 - nic/ni :: nice用户进程使用占比
-- idle/id :: 空闲时间占比
-- io/wa :: 等待IO的占比
+- idle/id :: 空闲时间占比，如果这个值过低，表示CPU存在瓶颈
+- io/wa :: 等待IO的占比，如果这个值过高，表示IO存在瓶颈
 - irq/hi :: 中断占比
 - sirq/si :: 软中断占比
 - steal/st :: 虚拟CPU使用占比，一般在虚拟机中才能看到
@@ -294,6 +294,21 @@ KiB Swap:  7916540 total,    28824 used,  7887716 free.  3143600 cached Mem
 5d. Searching-in-a-Window
       L, &
 #+END_EXAMPLE
+这里介绍几个实用的命令：
+- M :: 进程列表按内存使用大小降序排序
+- P :: 进程列表按CPU使用大小降序排序
+*** free
+free命令的数据都是从 =/proc/meminfo= 中读取的。
+#+BEGIN_SRC sh
+$ free
+             total       used       free     shared    buffers     cached
+Mem:       5998076    5771648     226428     437208     372552    3365820
+-/+ buffers/cache:    2033276    3964800
+Swap:      7916540     263972    7652568
+#+END_SRC
+- Mem :: 从操作系统来看，显示的是物理内存，
+     buffers表示要写入到磁盘的数据，cached表示从磁盘缓存的数据，
+     可以用 =echo 3 > /proc/sys/vm/drop_caches= 清除缓存
 *** vmstat
 用于统计虚拟内存信息：
 #+BEGIN_SRC sh
@@ -343,6 +358,8 @@ find . -name "*.c" or -name "*.cpp"     # find c/c++ files
 #+END_SRC
 
 * 参考资料
+- [[http://linuxtools-rst.readthedocs.org/zh_CN/latest/][Linux工具快速教程]] :: 建议初学者必读，涵盖了Linux必备基本操作
+
 - [[http://www.grymoire.com/Unix/index.html][The Grymoire - home for UNIX wizards]]
 - [[http://c.biancheng.net/cpp/shell/][Linux Shell脚本教程：30分钟玩转Shell脚本编程]]
 - [[http://www.w3cschool.cc/linux/linux-shell.html][w3cschool：Shell 教程]]
