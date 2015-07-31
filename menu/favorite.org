@@ -9,3 +9,6 @@
 - [[/menu/slide.html][演示文档列表]] :: 我写的一些演示文稿
 - [[http://linuxtools-rst.readthedocs.org/zh_CN/latest/index.html][Linux工具快速教程]] :: 学习Linux工具入门教程
 - [[https://git-scm.com/book/en/v2][Pro Git]] [[https://git-scm.com/book/zh/v1][中文版]] :: 学习git入门经典教程
+
+*** 博客资源
+- [[http://www.gocalf.com/blog/][GoCalf Blog]] :: 算法类
