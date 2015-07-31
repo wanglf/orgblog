@@ -1,0 +1,70 @@
+#+TITLE: 算法习题集2
+#+AUTHOR: Micky Ching
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: algorithm
+
+* 算法问题
+** 递归算法
+1. 计算第n个Fibonacci数，如何扩展数据类型以支持无限大小。
+2. 给定一个 \( X\times{Y} \) 的方格，机器人从左上角走到右下角出去，
+   有多少种走法。
+3. 获取一个集合的所有子集。
+4. 计算一个字符串的排列。
+5. 计算一个n重括号的有效组合。
+6. 给定一个屏幕，每个像素表示一个颜色。给定一个点和一个颜色，
+   将该点附近和该点相同的颜色替换为指定颜色。
+7. 给定不限数量的钱币，面值为：25、10、5和1。计算n元面值的所有组合。
+8. 八皇后问题，每个皇后在行、列和斜线上都不和其它皇后见面。
+
+
+*** 递归提示
+1. 计算Fibonacci可以保存前两个值来求解下一个值，避免 \( f(n) = f(n-1) + f(n-2) \)
+   产生重复计算。
+   算法导论中提出了一个用矩阵恒等式求解的方法，对矩阵
+   \( \begin{pmatrix} 1 & 1 \\ 1 & 0 \end{pmatrix} \)
+   自乘，依次可得 \( \begin{pmatrix} 2 & 1 \\ 1 & 1 \end{pmatrix} \)，
+   \( \begin{pmatrix} 3 & 2 \\ 1 & 1 \end{pmatrix} \)，
+   \( \begin{pmatrix} 5 & 3 \\ 2 & 1 \end{pmatrix} \)
+
+
+** 复杂算法
+#+HTML: <!--abstract-begin-->
+
+1. 给定一个数组，包含浮点数，找出一个子序列，子序列的和是最大的。
+   - 如果输入元素是[-1, 1]的随机数，期望值是多少
+   - 将问题改为总和最接近0如何求解
+   - 将问题进一步扩展，给定一个 \( n \times n \) 的矩形数组，
+     求解最大子矩形
+
+#+HTML: <!--abstract-end-->
+
+*** 复杂算法提示
+2. 该问题有很多种解法，时间效率也不同。
+   - 穷举法 :: \( 0 \le i \le j \le n \) 的子序列，复杂度为 \( O(n^3) \)
+   - 穷举法 :: 在迭代j的时候利用sum(i, j-1)的结果可以将复杂度降低为 \( O(n^2) \)
+   - 穷举法 :: 构建一个sum序列，计算sum(i, j-1)可以由s[j]-s[i]得到，
+        同样可以将时间复杂度降低为 \( O(n^2) \)
+   - 分治法 :: 这种方法比较经典，将数组从中间分成两半，
+        分别计算左半部、右半部和跨中间值的最大子序列，
+        这种递归算法的效率需要解递推式： \( T(n) = 2T(n/2) + O(n) \)，
+        结果为 \( O(nlgn) \)。
+   - 扫描法 :: 想办法从A[0..i-1]得到A[0..i]的最大子序列，
+        最大子序列要么在A[0..i-1]中，要么在以A[i]结束的序列中。
+#+BEGIN_SRC python :exports both :results output
+def max_subseq(A):
+    max0, maxi = (A[0], 0), A[0]
+    for i in range(1, len(A)):
+        maxi = max(maxi + A[i], A[i])
+        if maxi > max0[0]:
+            max0 = (maxi, i)
+    print "max {} last index {}".format(max0[0], max0[1])
+max_subseq([-1, 2, 3, -3, 4, -7, 8, 9, 20, -3])
+#+END_SRC
+
+#+RESULTS:
+: max 37 last index 8
+
+
+
+
