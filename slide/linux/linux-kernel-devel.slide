@@ -6,6 +6,12 @@
 
 * Write Linux driver
 ** Write a kernal module
+*** kernel structure
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 8cm
+file:fig/kdevel/kernel-structure.png
+#+END_CENTER
+
 *** kernel module structure
 #+BEGIN_SRC c
 #include <linux/module.h>
@@ -19,10 +25,23 @@
 #+BEGIN_SRC c
 int scull_major = SCULL_MAJOR;
 module_param(scull_major, int, S_IRUGO);
+/* module_param_array(name, type, num, perm); */
 #+END_SRC
 #+BEGIN_SRC sh
 insmod hello.ko scull_major=123
 #+END_SRC
+
+| bool           | boolean               |
+| charp          | char pointer          |
+| int/short/long | and uint/ushort/ulong |
+
+*** kernel module symbol table
+- EXPORT_SYMBOL_GPL :: export API for other module
+- MODULE_VERSION :: module version string
+- MODULE_LICENSE :: define module liscense
+- MODULE_AUTHOR :: author info
+- MODULE_ALIAS :: another name for module
+- MODULE_DESCRIPTION :: module info
 
 ** Write a char device driver
 *** define device operations
@@ -61,28 +80,39 @@ void cdev_del(struct cdev *p);
 void unregister_chrdev_region(dev_t from, unsigned count);
 #+END_SRC
 
-** Advanced topic
+*** file_operations open/read API
+#+BEGIN_SRC c
+static int scull_open(struct inode *inode, struct file *file);
+static ssize_t scull_read(struct file *file, char __user *buf,
+	size_t count, loff_t *ppos)
+#+END_SRC
+- put data-structure to file->private_data in open
+- get data-structure from file->private_data in read/write...
+- use copy_to_user/copy_from_user to access user-space
+
+** Memory and Sync method
 *** Memory manipulation
+- for frequently alloc memory should use kmem_cache_create API
 #+BEGIN_SRC c
 static void *kmalloc(size_t size, gfp_t flags);
 void kfree(const void *addr);
+
+long copy_to_user(void __user *to, const void *from, long n);
+long copy_from_user(void *to, const void __user *from, long n);
 #+END_SRC
 - GFP_KERNEL :: may sleep
 - GFP_ATOMIC :: no sleep, may use emergency
 - GFP_NOWAIT :: no sleep, not use emergency
+
 *** IO manipulation
 #+BEGIN_SRC c
+struct resource *request_mem_region(unsigned long start,
+	unsigned long len, char *name);
+void release_mem_region(unsigned long start, unsigned long len);
 void __iomem *ioremap(unsigned long port, unsigned long size);
 void iounmap(volatile void __iomem *addr);
-#+END_SRC
-
-#+BEGIN_SRC c
-u8 readb(const volatile void __iomem *addr);
-u16 readw(const volatile void __iomem *addr);
-u32 readl(const volatile void __iomem *addr);
-void writeb(u8 b, volatile void __iomem *addr);
-void writew(u16 b, volatile void __iomem *addr);
-void writel(u32 b, volatile void __iomem *addr);
+unsigned int ioread8(void *addr);	/* 16, 32 */
+void iowrite8(u8 value, void *addr);	/* 16, 32 */
 #+END_SRC
 
 *** DMA manipulation
@@ -91,6 +121,15 @@ void *dma_alloc_coherent(struct device *dev, size_t size,
 	dma_addr_t *dma, gfp_t gfp);
 void dma_free_coherent(struct device *dev, size_t size,
 	void *ptr, dma_addr_t dma);
+
+dma_addr_t dma_map_single(struct device *dev, void *cpu_addr,
+	size_t size, enum dma_data_direction dir);
+void dma_unmap_single(struct device *dev, dma_addr_t dma_addr,
+	size_t size, enum dma_data_direction dir);
+int dma_map_sg(struct device *dev, struct scatterlist *sg,
+	int nents, enum dma_data_direction dir);
+void dma_unmap_sg(struct device *dev, struct scatterlist *sg,
+	int nents, enum dma_data_direction dir);
 #+END_SRC
 - ptr :: used to save DMA description table
 
@@ -113,8 +152,6 @@ void mutex_unlock(struct mutex *mutex);
 *** spinlock sync method
 - Can't sleep while holding lock
 - Can't preempted while holding lock
-
-*** spinlock sync API
 #+BEGIN_SRC c
 void spin_lock_init(spinlock_t *lock);
 void spin_lock(spinlock_t *lock);
@@ -124,6 +161,7 @@ void spin_unlock_irqrestore(spinlock_t *lock, unsigned long flags);
 #+END_SRC
 - if lock not used in ISR, disable IRQ is not need
 
+** Thread and Async sequence
 *** kernel thread
 #+BEGIN_SRC c
 int kthread_func(void *data);
@@ -135,7 +173,11 @@ bool kthread_should_stop(void);
 
 *** wait for some time
 #+BEGIN_SRC c
+void ndelay(unsigned long nsecs);
+void udelay(unsigned long usecs);
+void mdelay(unsigned long msecs);
 void msleep(unsigned int msecs);
+void ssleep(unsigned int seconds);
 void usleep_range(unsigned long min, unsigned long max);
 #+END_SRC
 
@@ -158,14 +200,59 @@ int wait_event_interruptible(wait_queue_head_t *wq, bool cond);
 void wake_up_interruptible(wait_queue_head_t *wq);
 #+END_SRC
 
+*** Timer API
+#+BEGIN_SRC c
+void init_timer(struct timer_list *timer);
+void add_timer(struct timer_list *timer);
+int mod_timer(struct timer_list *timer, unsigned long expires);
+int del_timer(struct timer_list *timer);
+int del_timer_sync(struct timer_list *timer);
+#+END_SRC
+- sync API guarantees not running on any CPU
+*** Tasklet
+#+BEGIN_SRC c
+void tasklet_init(struct tasklet_struct *t,
+	void (*func)(unsigned long),
+	unsigned long data);
+void tasklet_schedule(struct tasklet_struct *t);
+void tasklet_kill(struct tasklet_struct *t);
+#+END_SRC
+*** Workqueue
+#+BEGIN_SRC c
+struct workqueue_struct *create_workqueue(const char *name);
+INIT_WORK(struct work_struct *work,
+	void (*function)(void *data));
+int queue_work(struct workqueue_struct *queue,
+	struct work_struct *work);
+int queue_delayed_work(struct workqueue_struct *queue,
+	struct work_struct *work,
+	unsigned long delay_ms);
+void flush_workqueue(struct workqueue_struct *queue);
+void destroy_workqueue(struct workqueue_struct *queue);
+#+END_SRC
+
+#+BEGIN_SRC c
+INIT_WORK(struct work_struct *work,
+int schedule_work(struct work_struct *work);
+void flush_scheduled_work(void);
+#+END_SRC
 * Kernel build system
 ** Write build rules
-*** write kernel Makefile
+*** write kernel Makefile(in kernel)
 #+BEGIN_SRC makefile
 obj-y += mmc
 obj-$(CONFIG_MMC) += core/
 obj-$(CONFIG_MMC_BLOCK) += mmc_block.o
 mmc_block-objs := block.o queue.o
+#+END_SRC
+
+*** write kernel Makefile(out kernel)
+#+BEGIN_SRC makefile
+# build rule is same with in-kernel, but should add below
+KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+PWD := $(shell pwd)
+default:
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 #+END_SRC
 
 *** write Kconfig
