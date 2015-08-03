@@ -17,7 +17,6 @@
 7. 给定不限数量的钱币，面值为：25、10、5和1。计算n元面值的所有组合。
 8. 八皇后问题，每个皇后在行、列和斜线上都不和其它皇后见面。
 
-
 *** 递归提示
 1. 计算Fibonacci可以保存前两个值来求解下一个值，避免 \( f(n) = f(n-1) + f(n-2) \)
    产生重复计算。
@@ -27,7 +26,6 @@
    \( \begin{pmatrix} 3 & 2 \\ 1 & 1 \end{pmatrix} \)，
    \( \begin{pmatrix} 5 & 3 \\ 2 & 1 \end{pmatrix} \)
 
-
 ** 复杂算法
 #+HTML: <!--abstract-begin-->
 
@@ -36,11 +34,14 @@
    - 将问题改为总和最接近0如何求解
    - 将问题进一步扩展，给定一个 \( n \times n \) 的矩形数组，
      求解最大子矩形
+2. 给定整数n和m，\( n \le m > 0 \)，如何生成m个随机数，
+   范围在 \( 0 \le m \le n \) 中。
+   - 当n很大，而m很接近n时，如何设计可以提高速度
 
 #+HTML: <!--abstract-end-->
 
 *** 复杂算法提示
-2. 该问题有很多种解法，时间效率也不同。
+1. 该问题有很多种解法，时间效率也不同。
    - 穷举法 :: \( 0 \le i \le j \le n \) 的子序列，复杂度为 \( O(n^3) \)
    - 穷举法 :: 在迭代j的时候利用sum(i, j-1)的结果可以将复杂度降低为 \( O(n^2) \)
    - 穷举法 :: 构建一个sum序列，计算sum(i, j-1)可以由s[j]-s[i]得到，
@@ -64,7 +65,32 @@ max_subseq([-1, 2, 3, -3, 4, -7, 8, 9, 20, -3])
 
 #+RESULTS:
 : max 37 last index 8
+2. 在编程珠玑中对此问题做了比较详尽的叙述，这里列出两种经典方法：
+   第一种方法难以想出来，第二种方法设计很精巧。
+#+BEGIN_SRC python :exports both :results output
+import random
+def randoms_1(n, m):
+    random.seed(0)
+    balls = []
+    for i in range(n):
+        if (random.randint(0, n) % (n - i) < m):
+            balls.append(i)
+            m -= 1
+    return balls
+def randoms_2(n, m):
+    random.seed(0)
+    balls = [i for i in range(n)]
+    for i in range(m):
+        j = random.randint(0, n)
+        balls[i], balls[j] = balls[j], balls[i]
+    return balls[:m]
+print randoms_1(20, 10)
+print randoms_2(20, 10)
+#+END_SRC
 
+#+RESULTS:
+: [2, 3, 6, 7, 9, 11, 13, 14, 15, 19]
+: [17, 15, 8, 5, 10, 2, 7, 16, 4, 12]
 
 
 
