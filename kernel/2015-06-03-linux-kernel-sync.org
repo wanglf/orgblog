@@ -230,5 +230,38 @@ do {
 首先读取顺序锁的值，然后进入临界区操作，操作完了之后再检查顺序值，
 如果顺序值被修改了，说明在操作期间被人动过，就需要重试，
 否则不需要重试。
+*** RCU-Read-Copy-Update
+这是一种高级互斥机制，如果用在正确的场景下，效率会非常好。
+要注意这种锁的应用场景：
+- 读取频率很高，写入频率很低！
+- 受保护的资源只能通过指针访问
+- 引用保护资源的地方必须是原子上下文
 
+其工作原理是，如果发生写入，那么写入将复制资源，在复制的资源上修改，
+修改完毕之后更新指针。
+这种锁是严重偏向读取优先的，读取几乎不需要等待，
+当然要求就是读取期间需要禁止抢占。
+相比较于顺序锁，读取不需要重试，顺序锁也是用在读取多写入少的情况，
+但是人家写入是不会被读取阻塞的。
+#+BEGIN_SRC c
+rcu_read_lock();
+ptr = rcu_dereference_raw(rcu_ptr);
+do_something_with(ptr);
+rcu_read_unlock();
+#+END_SRC
 
+但是更新就比较费劲，因为要等待所有人释放才能更新，
+更新只需调用如下API：
+#+BEGIN_SRC c
+ptr = rcu_dereference_raw(rcu_ptr);
+new = copy_memory(ptr);
+rcu_assign_pointer(rcu_ptr, new);
+call_rcu(&ptr->rcu_head, free_function);
+#+END_SRC
+首先需要复制内存并修改，假定新内存地址为new，
+通过 =rcu_assign_pointer= 可以修改，
+但是我们需要释放之前的内存，那么需要先保存事先的地址，
+通过调用 =call_rcu= 来释放。
+另外要注意的是，每个受RCU保护的资源都应该有一个成员叫 =rcu_head=，
+这样我们才能够在释放的时候通过 =container_of= 由 =rcu_head=
+找到真正需要释放的资源。
