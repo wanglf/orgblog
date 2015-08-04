@@ -88,13 +88,15 @@
 * 网状数据结构
 ** 树和图
 1. 判断一个二叉树是否是平衡树。
-2. 给定一个已排序数组，创建一个高度最小的二叉树。
-3. 给定一个二叉树，为每层创建一个链表包含该层所有元素。
-4. 给定二叉树中的一个节点，找其IN-order遍历的下一个节点。
-5. 给定二叉树中任意两个节点，找其最小公共祖先，注意不一定是二叉搜索树。
-6. 给定两个二叉树，判断其中一个是否是另一个的子树，假定树的规模很大。
-7. 给定一个二叉树，每个节点包含一个值，打印节点相加的和为给定值的所有路径。
-8. 给定一个有向图中的两点，判断两者之间是否有路径可达。
+2. 编写一个二叉树非递归中序遍历。
+3. 编写一个二叉搜索树的插入删除操作。
+4. 给定一个已排序数组，创建一个高度最小的二叉树。
+5. 给定一个二叉树，为每层创建一个链表包含该层所有元素。
+6. 给定二叉树中的一个节点，找其IN-order遍历的下一个节点。
+7. 给定二叉树中任意两个节点，找其最小公共祖先，注意不一定是二叉搜索树。
+8. 给定两个二叉树，判断其中一个是否是另一个的子树，假定树的规模很大。
+9. 给定一个二叉树，每个节点包含一个值，打印节点相加的和为给定值的所有路径。
+10. 给定一个有向图中的两点，判断两者之间是否有路径可达。
 
 *** 树和图提示
 1. 只需要比较最高和最低深度的差距即可。
@@ -109,7 +111,56 @@ int min_depth(node root)
 }
    #+END_SRC
 
-2. 搞清楚二叉搜索树和数组的对应关系，用一个简单的递归式即可完成。
+2. 一种方法可以用栈来保存元素。
+   一种方法可以找到最左端元素，然后反复查找后继来完成。
+
+3. 为了简单，给出算法导论中的示例代码：
+   #+BEGIN_SRC python
+def tree_insert(root, node):
+    x, pos = root, root
+    while x:
+        pos = x
+        x = x.left if node < x else x.right
+    node.parent = pos
+    if not pos:
+        root = node
+    elif node < pos:
+        pos.left = node
+    else:
+        pos.right = node
+   #+END_SRC
+   删除就比较复杂了，要分几种情况：
+   - node没有子节点，可以直接删除
+   - node只有一个孩子，将孩子替换该节点
+   - node有两个孩子，要找到后继，并将node的左子树放到后继的左子树中
+   #+BEGIN_SRC python
+def tree_replace_subtree(T, a, b):
+    "replace subtree a by subtree b"
+    if not a.parent:
+        T = b
+    elif a == a.parent.left:
+        a.parent.left = b
+    else:
+        a.parent.right = b
+    if b:
+        b.parent = a.parent
+
+def tree_remove(T, node):
+    if not node.left:
+        tree_replace_subtree(T, node, node.right)
+    elif not node.right:
+        tree_replace_subtree(T, node, node.left)
+    else:
+        next = tree_min(node.right)
+        if next.parent != node:
+            tree_replace_subtree(T, next, next.right)
+            next.right = node.right
+            next.right.parent = next
+        tree_replace_subtree(T, node, next)
+        next.left = node.left
+        next.left.parent = next
+   #+END_SRC
+4. 搞清楚二叉搜索树和数组的对应关系，用一个简单的递归式即可完成。
    #+BEGIN_SRC cpp
 node tr_add(int *arr, int start, int end)
 {
@@ -127,14 +178,14 @@ node tr_add(int *arr, int start, int end)
 }
    #+END_SRC
 
-3. 首先root单属于一个链表，那么第2层链表就是root的子节点，
+5. 首先root单属于一个链表，那么第2层链表就是root的子节点，
    第3层链表就是第2层链表中每个节点的字节点，依次类推即可。
 
-4. 该题目比较难，需要分如下几种情况分别处理：
+6. 该题目比较难，需要分如下几种情况分别处理：
    1. X.right存在，那么下一个节点就是left_most(X.right)
    2. X = P.left，那么P就是下一个节点
    3. X = P.right，那么下一个节点就是next(P)
-5. 如果是二叉搜索树，可以根据搜索路径来确定分叉节点。
+7. 如果是二叉搜索树，可以根据搜索路径来确定分叉节点。
    反过来可以找出A和B到根节点的路径，计算路径的相交点，通过链表很容易实现。
    另外一个比较有意思的解法是：如果A、B在P的一边，那么最小公共祖先一定是P的字节点，
    否则P就是A和B的最小公共祖先。
@@ -148,7 +199,7 @@ node min_ancestor(node root, node A, node B)
     return root;
 }
    #+END_SRC
-6. 创建一个前序遍历字符串和中序遍历字符串，如果A的两种字符串均是B的子字符串，
+8. 创建一个前序遍历字符串和中序遍历字符串，如果A的两种字符串均是B的子字符串，
    那么可以确定A是B的子树。
    另外可以用一个典型的递归匹配算法来完成。
    #+BEGIN_SRC cpp
@@ -176,7 +227,7 @@ int is_subtree(node A, node B)
     return is_subtree(A, B.left) || is_subtree(A, B.right);
 }
    #+END_SRC
-7. 这个题目比较有难度，要对每一个节点作为起始遍历，并记录其所有路径。
+9. 这个题目比较有难度，要对每一个节点作为起始遍历，并记录其所有路径。
    #+BEGIN_SRC cpp
 void sum_path(node root, int sum, vector<int> &arr, int depth)
 {
@@ -197,7 +248,7 @@ void sum_path(node root, int sum, vector<int> &arr, int depth)
     sum_path(root.right, sum, a1, depth + 1);
 }
    #+END_SRC
-8. 假定给定两点为A和B，从A开始进行遍历即可。
+10. 假定给定两点为A和B，从A开始进行遍历即可。
 * 搜索与排序
 ** 排序与搜索
 1. 有限正整数排序问题，给定一个文件，包含正整数，最大值小于 \( 10^7 \)，
