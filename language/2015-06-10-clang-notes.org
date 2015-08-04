@@ -4,6 +4,126 @@
 #+LATEX_CLASS: latex-doc
 #+PAGE_TAGS: clang
 
+* 语法要点
+** 基本元素
+*** 可执行程序
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/clang/linux-mem-model.png
+#+END_CENTER
+
+*** 指针
+指针常量：指向固定
+#+BEGIN_SRC cpp
+int *const cp = &x;
+#+END_SRC
+
+常量指针：只读指针
+#+BEGIN_SRC cpp
+const int *pc = &x;
+int const *pc = &x;
+#+END_SRC
+
+双常量指针：指向固定的只读指针。
+#+BEGIN_SRC cpp
+const int *const cpc = &x;
+#+END_SRC
+
+理解 =const= 要记住它修饰的是其右边的东西，
+如右边是 =ptr=，那么就表示指向固定，
+如右边是 =*ptr=，那么就表示内容只读。
+
+*** 运算符优先级
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/clang/op-priority.png
+#+END_CENTER
+*** 函数参数
+- 参数从右往左入栈
+
+可变参数用法：
+#+BEGIN_SRC cpp
+#include <stdarg.h>
+#include <stdio.h>
+
+void test1(int count, ...)              // number by count
+{
+    va_list args;
+    va_start(args, count);
+    for (int i = 0; i < count; i++) {
+        int value = va_arg(args, int);
+        printf("%d\n", value);
+    }
+    va_end(args);
+}
+
+void test2(const char* s, ...)          // end by NULL
+{
+    printf("%s\n", s);
+    va_list args;
+    va_start(args, s);
+    char* value;
+    do {
+        value = va_arg(args, char*);
+        if (value)
+            printf("%s\n", value);
+    } while (value != NULL);
+    va_end(args);
+}
+
+void test3(const char* format, ...)     // parse by format
+{
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+}
+
+int main(int argc, char* argv[])
+{
+    test1(3, 11, 22, 33);
+    test2("hello", "world", NULL);
+    test3("number %d\n", 1234);
+    return 0;
+}
+#+END_SRC
+
+数组参数默认会退化为指针：
+#+BEGIN_SRC cpp
+// 等价写法：int arr[]
+void arr1_args(int *arr, int len);
+
+void arrp_args(int (*arrp)[len]);
+
+// 等价写法：int arr[][col]
+void arr2_args(int (*arr)[col], int row);
+#+END_SRC
+
+*** 结构体
+宏 =offsetof(class, member)= 可用于计算成员偏移量，
+但是这个宏其实是有很多限制的，比方不能对结构体中的压缩位字段计算。
+
+如果将尾部成员定义为0长数组的话，
+计算结构体大小时其对应成员长度按0计入。
+#+BEGIN_SRC cpp :exports both
+#include <stdio.h>
+struct zero_only {
+    char str[0];
+};
+struct zero_tail {
+    int count;
+    char str[0];
+};
+int main(int argc, char *argv[])
+{
+    printf("%d -> %d\n", sizeof(struct zero_only), sizeof(struct zero_tail));
+    return 0;
+}
+#+END_SRC
+
+#+RESULTS:
+: 0 -> 4
+
 * 陷阱与缺陷
 ** 陷阱
 *** 访问越界
