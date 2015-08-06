@@ -170,6 +170,12 @@ make install
 echo 5 > /sys/class/backlight/acpi_video0/brightness
 #+END_SRC
 输入的数字范围为0-10.
+*** 安装python-pip
+ref: [[http://sharadchhetri.com/2014/05/30/install-pip-centos-rhel-ubuntu-debian/][How to install pip on CentOS/RHEL/Ubuntu/Debian]]
+#+BEGIN_SRC sh
+yum install epel-release
+yum install -y python-pip
+#+END_SRC
 
 *** 安装vlc
 安装vlc需要添加nux-dextop源，添加成功之后执行 =yum install vlc= 即可安装，
