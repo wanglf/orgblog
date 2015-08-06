@@ -88,7 +88,11 @@ sudo dkms mkdeb hello/0.1
 
 ** DKMS on RHEL
 *** 安装dkms环境
-- 下载并安装dkms：[[http://rpmfind.net/linux/rpm2html/search.php?query%3Ddkms][RPM resource dkms]]
+1. 下载并安装dkms：[[http://rpmfind.net/linux/rpm2html/search.php?query%3Ddkms][RPM resource dkms]]
+2. 如果要用rpmbuild需要安装rpm-build
+   #+BEGIN_SRC sh
+yum install rpm-build
+   #+END_SRC
 
 * 参考资料
 - [[http://linux.dell.com/dkms/manpage.html][DKMS manpage]]
