@@ -9,7 +9,9 @@
 - [[/menu/slide.html][演示文档列表]] :: 我写的一些演示文稿
 - [[http://linuxtools-rst.readthedocs.org/zh_CN/latest/index.html][Linux工具快速教程]] :: 学习Linux工具入门教程
 - [[https://git-scm.com/book/en/v2][Pro Git]] [[https://git-scm.com/book/zh/v1][中文版]] :: 学习git入门经典教程
+- [[http://www.greenteapress.com/thinkpython/][Think Python]] :: Python入门教程，良心网站
 - [[https://github.com/julycoding/The-Art-Of-Programming-By-July][编程之法：面试和算法心得]] :: 结构之法博客整理书籍
+- [[http://yeasy.gitbooks.io/docker_practice/content/][Docker —— 从入门到实践]] :: Docker书籍，良心网站
 - [[https://github.com/Flowerowl/Big-Data-Resources][机器学习相关资源]] :: 大数据/数据挖掘/推荐系统/机器学习相关资源
 - [[https://github.com/linyiqun/DataMiningAlgorithm][数据挖掘算法]] [[http://blog.csdn.net/androidlushangderen/article/details/43964589][相关文档]] :: 数据挖掘算法java实现，
 - [[https://github.com/onurakpolat/awesome-bigdata][Awesome Big Data]] :: 大数据框架和资源
@@ -17,3 +19,7 @@
 - [[http://www.gocalf.com/blog/][GoCalf Blog]] :: 算法类
 - [[http://www.52nlp.cn/][我爱自然语言处理]] :: 自然语言处理类
 - [[http://www.yangzhiping.com/][阳志平]] :: 心理健康与认知科技产品
+*** 趣味游戏
+- [[http://www.pythonchallenge.com/][Python通关挑战]] [[http://garethrees.org/2007/05/07/python-challenge/][参考解答]] :: 一个Python通关挑战
+
+
