@@ -23,3 +23,5 @@
 - [[http://www.pythonchallenge.com/][Python通关挑战]] [[http://garethrees.org/2007/05/07/python-challenge/][参考解答]] :: 一个Python通关挑战
 
 
+** 股票研究
+- [[http://www.5ye.cn/][我耶]] :: 股票网，入门知识，书籍等
