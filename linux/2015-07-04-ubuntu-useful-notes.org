@@ -5,7 +5,8 @@
 #+PAGE_TAGS: linux ubuntu
 
 * 实用技巧
-** 软件源
+** 系统配置
+*** 软件源配置
 #+HTML: <!--abstract-begin-->
 国内用163的源比较快，编辑 =/etc/apt/sources.list= 写入如下内容。
 #+BEGIN_SRC sh
@@ -33,10 +34,57 @@ deb-src http://mirrors.163.com/ubuntu/ precise-updates main restricted universe 
 deb-src http://mirrors.163.com/ubuntu/ precise-proposed main restricted universe multiverse
 #+END_SRC
 
-** 文件管理
+*** locale和输入法
+中文locale需要添加 =zh_CN.UTF-8= 支持，否则在Emacs上输入中文会不显示。
+#+BEGIN_SRC sh
+sudo locale-gen zh_CN.UTF-8
+#+END_SRC
+
+ref:
+- http://www.linuxidc.com/Linux/2014-02/96171.htm
+
+由于我要用emacs，而ibus在emacs上有bug，至今没有人去解决。
+所以不得不使用fcitx。
+
+首先卸载ibus及相关配置。
+#+BEGIN_SRC sh
+killall ibus-daemon
+sudo apt-get purge ibus ibus-gtk ibus-gtk3 ibus-pinyin* \
+     ibus-sunpinyin ibus-table python-ibus
+sudo apt-get autoremove indicator-keyboard
+rm -rf ~/.config/ibus
+#+END_SRC
+
+安装fcitx输入法，安装完成之后需要重新登录并设定输入法。
+#+BEGIN_SRC sh
+sudo add-apt-repository ppa:fcitx-team/nightly
+sudo apt-get update
+sudo apt-get install fcitx-pinyin
+sudo apt-get install fcitx-sogoupinyin
+#+END_SRC
+
 *** 给nautilus添加在当前目录打开终端选项
 #+BEGIN_SRC sh
 sudo apt-get install nautilus-open-terminal
+#+END_SRC
+
+*** 安装jekyll
+ref:
+- http://blog.csdn.net/cschengvdn/article/details/42425271
+- http://www.linuxidc.com/Linux/2014-09/106771.htm
+
+在Ubuntu上如果用 =apt-get= 安装会无法使用jekyll，所以不得不用gem安装。
+但是用gem又需要修改源：
+#+BEGIN_SRC sh
+gem sources -l                          # 查看源列表
+gem sources --remove https://rubygems.org/
+gem sources -a http://ruby.taobao.org/
+#+END_SRC
+
+然后利用gem安装：
+#+BEGIN_SRC sh
+sudo gem install jekyll
+sudo gem install therubyracer
 #+END_SRC
 
 *** 配置NFS远程文件系统
