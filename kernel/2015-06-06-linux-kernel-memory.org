@@ -134,6 +134,161 @@ get_cpu_var(ptr);
 put_cpu_var(ptr);
 void free_percpu(const void *);
 #+END_SRC
+** DMA
+DMA允许外部设备和内存直接传输数据，而不需要CPU参与，由于没有CPU，
+那么就需要一个DMA控制器。
+数据传输以两种方式触发，第一种为软件请求，以read为例：
+1. 进程调用read，驱动分配DMA缓冲区，指示硬件传输数据，进程睡眠
+2. 硬件写入DMA缓冲区，完成时触发中断
+3. 中断处理程序应答中断，唤醒进程
+
+第二种为硬件请求，即硬件接收到数据要通知CPU去处理，流程如下：
+1. 硬件发出中断告知数据到达
+2. 中断处理程序分配DMA缓冲区，让设备写入到缓冲区
+3. 设备写完之后再次发出中断
+4. 中断处理程序唤醒相关进程处理接收到的数据
+
+DMA控制器和具体的平台相关，如i386的8327有两个控制器8个通道。
+DMA传输器限制在低内存，装入寄存器的地址必须是物理地址。
+
+DMA映射的实质就是分配一段内存以便设备访问，在某些情况下，
+要对高端内存进行DMA操作，而高端内存又不能被外部设备访问，
+这个时候就要创建一个反弹缓冲区，用来作为中间体。
+
+根据DMA缓冲区保留时间的长短，可以分为两种DMA映射。
+- 一致DMA映射 :: 存在于驱动的整个生命周期，可以被CPU和外围设备同时访问
+- 流式DMA映射 :: 为单个操作设置，通过映射CPU虚拟空间的一段地址供设备访问
+
+*** 一致DMA映射
+#+BEGIN_SRC cpp
+static inline void *pci_alloc_consistent(struct pci_dev *hwdev, size_t size,
+                                         dma_addr_t *dma_handle)
+{
+    return dma_alloc_coherent(hwdev == NULL ? NULL : &hwdev->dev,
+                              size, dma_handle, GFP_ATOMIC);
+}
+#+END_SRC
+由 =dma_coherent_mem= 描述一致映射内存：
+#+BEGIN_SRC cpp
+struct dma_coherent_mem {
+    void            *virt_base;
+    u32             device_base;
+    int             size;
+    int             flags;
+    unsigned long   *bitmap;
+};
+#+END_SRC
+#+BEGIN_SRC cpp
+void *dma_alloc_coherent(struct device *dev, size_t size,
+                         dma_addr_t *dma_handle, int gfp)
+{
+    void *ret;
+    // 若是设备，得到设备的dma内存区域
+    struct dma_coherent_mem *mem = dev ? dev->dma_mem : NULL;
+    int order = get_order(size);        // 将size转换成order
+    gfp &= ~(__GFP_DMA | __GFP_HIGHMEM);
+    if (mem) {                          // 设备的DMA映射
+        int page = bitmap_find_free_region(mem->bitmap, mem->size, order);
+        if (page >= 0) {
+            ,*dma_handle = mem->device_base + (page << PAGE_SHIFT);
+            ret = mem->virt_base + (page << PAGE_SHIFT);
+            memset(ret, 0, size);
+            return ret;
+        }
+        if (mem->flags & DMA_MEMORY_EXCLUSIVE)
+            return NULL;
+    }
+    // 不是设备的DMA映射
+    if (dev == NULL || (dev->coherent_dma_mask < 0xffffffff))
+        gfp |= GFP_DMA;
+    // 分配空闲页
+    ret = (void *)__get_free_pages(gfp, order);
+    if (ret != NULL) {
+        memset(ret, 0, size);
+        ,*dma_handle = virt_to_phys(ret);
+    }
+    return ret;
+}
+#+END_SRC
+
+*** 流式映射
+#+BEGIN_SRC cpp
+static inline dma_addr_t pci_map_single(struct pci_dev *hwdev,
+                                        void *ptr, size_t size, int direction)
+{
+    return dma_map_single(hwdev == NULL ? NULL : &hwdev->dev, ptr, size,
+                          (enum ma_data_direction) direction);
+}
+#+END_SRC
+#+BEGIN_SRC cpp
+static inline dma_addr_t dma_map_single(struct device *dev, void *ptr,
+                                        size_t size,
+                                        enum dma_data_direction direction)
+
+{
+    BUG_ON(direction == DMA_NONE);
+    // 可能有些数据还会保留在处理器的高速缓冲存储器中，因此必须显式刷新
+    flush_write_buffers();
+    return virt_to_phys(ptr);　// 虚拟地址转化为物理地址
+}
+#+END_SRC
+
+*** 分散聚集映射
+#+BEGIN_SRC cpp
+struct scatterlist {
+    struct page         *page;
+    unsigned int        offset;
+    dma_addr_t          dma_address;    // 用在分散聚集操作中的缓冲区地址
+    unsigned int        length;         // 该缓冲区的长度
+};
+#+END_SRC
+#+BEGIN_SRC cpp
+static inline int pci_map_sg(struct pci_dev *hwdev, struct scatterlist *sg,
+                             int nents, int direction)
+{
+	return dma_map_sg(hwdev == NULL ? NULL : &hwdev->dev, sg, nents,
+                          (enum dma_data_direction)direction);
+}
+#+END_SRC
+#+BEGIN_SRC cpp
+static inline int dma_map_sg(struct device *dev, struct scatterlist *sg,
+                             int nents, enum dma_data_direction direction)
+{
+    int i;
+
+    BUG_ON(direction == DMA_NONE);
+    for (i = 0; i < nents; i++ ) {
+        BUG_ON(!sg[i].page);
+        // 将页及页偏移地址转化为物理地址
+        sg[i].dma_address = page_to_phys(sg[i].page) + sg[i].offset;
+    }
+    // 可能有些数据还会保留在处理器的高速缓冲存储器中，因此必须显式刷新
+    flush_write_buffers();
+    return nents;
+}
+#+END_SRC
+
+*** DMA池
+有些驱动要用到许多很小的一致DMA映射，这种情况用DMA池更好。
+#+BEGIN_SRC cpp
+struct dma_pool {
+    struct list_head        page_list;
+    spinlock_t              lock;
+    size_t                  blocks_per_page;　  // 每页的块数
+    size_t                  size;               // DMA池里的一致内存块的大小
+    struct device           *dev;               // 将做DMA的设备
+    size_t                  allocation;         // 分配的没有跨越边界的块数
+                                                // 是size的整数倍
+    char                    name [32];　        // 池的名字
+    wait_queue_head_t       waitq;              // 等待队列
+    struct list_head        pools;
+};
+#+END_SRC
+#+BEGIN_SRC cpp
+struct dma_pool *dma_pool_create (const char *name, struct device *dev,
+                                  size_t size, size_t align,
+                                  size_t allocation)
+#+END_SRC
 ** 进程地址空间
 内核不仅要管理自己的内存，还需要管理用户空间进程的内存，
 这部分内存称之为进程地址空间。
