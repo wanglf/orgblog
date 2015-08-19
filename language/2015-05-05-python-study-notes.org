@@ -7,8 +7,8 @@
 * 语言要点
 #+HTML: <!--abstract-begin-->
 
-学习Python推荐一本书，叫 =Learning Python= ，
-不过这里是另外一本书的笔记，这边书叫 =Python In a Nutshell= ，
+学习Python推荐一本书，叫 =Learning Python=，
+不过这里是另外一本书的笔记，这边书叫 =Python In a Nutshell=，
 涵盖第4章的内容，也就是对Python的基本语法进行介绍。
 #+HTML: <!--abstract-end-->
 
@@ -40,21 +40,21 @@ Python对程序格式有较强的限定，如下所示：
 *** 简单操作
 - 比较有趣的是链式表达，如下面两个表达式等价。
 #+BEGIN_SRC python
-  a < b <= c < d
-  a < b and b <= c and c < d
+a < b <= c < d
+a < b and b <= c and c < d
 #+END_SRC
 - 三元表达方式如下所示。
 #+BEGIN_SRC python
-  returntrue if condition else returnfalse
+returntrue if condition else returnfalse
 #+END_SRC
 - 所有序列都支持测试成员是否存在， =if item in seqs=
 
 *** 列表操作
 - 删除子序列可以用del操作符
 #+BEGIN_SRC python
-  x = [1, 2, 3, 4, 5]
-  del x[1]                                # x = [1, 3, 4, 5]
-  del x[::2]                              # x = [3, 5]
+x = [1, 2, 3, 4, 5]
+del x[1]                                # x = [1, 3, 4, 5]
+del x[::2]                              # x = [3, 5]
 #+END_SRC
 
 - l.count(x) :: x出现次数
@@ -100,43 +100,43 @@ Python对程序格式有较强的限定，如下所示：
 ** 流程控制
 *** 分支语句
 #+BEGIN_SRC python
-  if condiiton:
-      statements
-  elif condition:
-      statements
-  else:
-      statements
+if condiiton:
+    statements
+elif condition:
+    statements
+else:
+    statements
 #+END_SRC
 
 要判断一个变量是否为真，直接的方式是 =if x= ，
 请不要使用如下的一些形式：
 #+BEGIN_SRC python
-  if x is True
-  if x == True
-  if bool(x)
+if x is True
+if x == True
+if bool(x)
 #+END_SRC
 
 *** 循环语句
 #+BEGIN_SRC python
-  while condition:
-      statements
+while condition:
+    statements
 #+END_SRC
 
 #+BEGIN_SRC python
-  for item in iterable:
-      statements
+for item in iterable:
+    statements
 #+END_SRC
 
 列表表达式(list comprehensions)是Python特有一个语法。
 #+BEGIN_SRC python
-  [expression for item in iterable clauses]
+[expression for item in iterable clauses]
 #+END_SRC
 
 例如：
 #+BEGIN_SRC python
-  [x + 1 for x in range(10)]
-  [x + 1 for x in range(10) if x % 2]
-  [x + y for x in range(10) for y in range(10)]
+[x + 1 for x in range(10)]
+[x + 1 for x in range(10) if x % 2]
+[x + y for x in range(10) for y in range(10)]
 #+END_SRC
 *** 跳转语句
 | break    | 退出循环       |
@@ -144,18 +144,18 @@ Python对程序格式有较强的限定，如下所示：
 
 ** 函数
 #+BEGIN_SRC python
-  def functionname(parameters):
-      statements
+def functionname(parameters):
+    statements
 #+END_SRC
 *** 属性
 #+BEGIN_SRC python :results output :exports both
-  def sum_args(*nums):
-      '''accept arbitrary numerical arguments and return their sum'''
-      return sum(nums)
+def sum_args(*nums):
+    '''accept arbitrary numerical arguments and return their sum'''
+    return sum(nums)
 
-  print sum_args.__name__
-  print sum_args.__doc__
-  print sum_args(1, 2, 3)
+print sum_args.__name__
+print sum_args.__doc__
+print sum_args(1, 2, 3)
 #+END_SRC
 
 #+RESULTS:
@@ -167,27 +167,27 @@ Python对程序格式有较强的限定，如下所示：
 函数默认将变量绑定到局部名称空间，要使用全局的名字，
 就需要在函数中作如下声明。
 #+BEGIN_SRC python
-  global indentifiers
+global indentifiers
 #+END_SRC
 
 *** 匿名函数
 #+BEGIN_SRC python
-  lambda parameters: expression
+lambda parameters: expression
 #+END_SRC
 
 *** 生成器
 #+BEGIN_SRC python
-  yield expression
+yield expression
 #+END_SRC
 
 #+BEGIN_SRC python :results output :exports both
-  def updown(n):
-      for x in range(n):
-          yield x
-      for x in range(n - 1, -1, -1):
-          yield x
-  for i in updown(10):
-      print i,
+def updown(n):
+    for x in range(n):
+        yield x
+    for x in range(n - 1, -1, -1):
+        yield x
+for i in updown(10):
+    print i,
 #+END_SRC
 
 #+RESULTS:
@@ -205,7 +205,7 @@ Python2支持经典模型和新风格，Python3只支持新风格，
 - locals :: 函数内部名字空间，形参和局部变量
 - enclosing :: 嵌套函数的外部函数
 - globals :: 函数所在模块名字空间
-- =__builtins__= :: 内置模块名称空间
+- __builtins__ :: 内置模块名称空间
 
 私有字段以双下划线开头，会被重命名，一般建议单下划线，提示即可。
 
@@ -239,9 +239,9 @@ class Example(obejct):
 #+END_SRC
 
 特殊方法：
-- =__new__= :: 创建对象实例
-- =__init__= :: 初始化对象状态
-- =__del__= :: 对象回收前调用
+- __new__ :: 创建对象实例
+- __init__ :: 初始化对象状态
+- __del__ :: 对象回收前调用
 
 Python提供了两个函数来判定类型关系：
 - issubclass(a, base) :: 判断a是否是base的继承
@@ -330,10 +330,10 @@ User.print_static()
 自定义 =__setitem__=、=__getitem__= 和 =__delitem__= 即可。
 函数对象/仿函数通过定义 =__call__= 来重载。
 
-- =__getattr__= :: 访问不存在的成员
-- =__setattr__= :: 对成员赋值
-- =__delattr__= :: 删除成员
-- =__getattribute__= :: 访问任何存在或不存在的成员，包括 =__dict__=
+- __getattr__ :: 访问不存在的成员
+- __setattr__ :: 对成员赋值
+- __delattr__ :: 删除成员
+- __getattribute__ :: 访问任何存在或不存在的成员，包括 =__dict__=
 在定义这些函数的时候，在里面不能调用 =setattr=、=getattr= 等函数，
 会造成死循环，因此只能直接访问 =__dict__=。
 而 =__getattribute__= 更狠，会拦截 =__dict__=，
