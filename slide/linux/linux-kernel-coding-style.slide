@@ -3,7 +3,7 @@
 #+EMAIL:
 #+OPTIONS: H:3 toc:2 ^:nil
 #+LATEX_CLASS: latex-slide
-#+LATEX_HEADER: \logo{\includegraphics[height=0.8cm]{fig/coding-style/logo}\vspace{7.5cm}}
+#+LATEX_HEADER: \logo{\includegraphics[height=0.8cm]{fig/logo}\vspace{7.5cm}}
 
 * 内核编码规范
 ** 引言
