@@ -87,6 +87,12 @@ sudo gem install jekyll
 sudo gem install therubyracer
 #+END_SRC
 
+*** 安装最新latex
+#+BEGIN_SRC sh
+wget https://github.com/scottkosty/install-tl-ubuntu/raw/master/install-tl-ubuntu && chmod +x ./install-tl-ubuntu
+./install-tl-ubuntu --help
+#+END_SRC
+
 *** 配置NFS远程文件系统
 服务端安装NFS服务端工具。
 #+BEGIN_SRC sh
