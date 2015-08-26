@@ -192,7 +192,7 @@ void spin_unlock_irqrestore(spinlock_t *lock, unsigned long flags);
 - if lock not used in ISR, disable IRQ is not need
 
 ** Wait and Async execute sequence
-*** wait for sometime
+*** wait for some time
 #+BEGIN_SRC cpp
 void ndelay(unsigned long nsecs);
 void udelay(unsigned long usecs);
@@ -224,11 +224,15 @@ void wake_up_interruptible(wait_queue_head_t *wq);
 *** Timer
 #+BEGIN_SRC cpp
 void init_timer(struct timer_list *timer);
+void setup_timer(struct timer_list *timer,
+                 void (*func)(unsigned long),
+                 unsigned long data);
 void add_timer(struct timer_list *timer);
 int mod_timer(struct timer_list *timer, unsigned long expires);
 int del_timer(struct timer_list *timer);
 int del_timer_sync(struct timer_list *timer);
 #+END_SRC
+- expires mean new timeout in jiffies
 - sync API guarantees not running on any CPU
 
 *** Kthread
@@ -296,7 +300,7 @@ static void kernel_exit(void)
 }
 #+END_SRC
 *** Workqueue
-- 使用单独队列
+- Use a dependent queue
 #+BEGIN_SRC cpp
 struct workqueue_struct *create_workqueue(const char *name);
 INIT_WORK(struct work_struct *work,
@@ -309,7 +313,7 @@ int queue_delayed_work(struct workqueue_struct *queue,
 void flush_workqueue(struct workqueue_struct *queue);
 void destroy_workqueue(struct workqueue_struct *queue);
 #+END_SRC
-- 使用系统队列
+- Use a system shared queue
 #+BEGIN_SRC cpp
 int schedule_work(struct work_struct *work);
 void flush_scheduled_work(void);
@@ -319,8 +323,8 @@ void flush_scheduled_work(void);
 ** Write build rules
 *** write kernel Makefile(in kernel)
 #+BEGIN_SRC makefile
-obj-y += mmc
-obj-$(CONFIG_MMC) += core/
+obj-y += mmc/ 				# build in kernel
+obj-$(CONFIG_MMC) += core/		# depends CONFIG_MMC
 obj-$(CONFIG_MMC_BLOCK) += mmc_block.o
 mmc_block-objs := block.o queue.o
 #+END_SRC
@@ -363,6 +367,7 @@ file:fig/kdevel/menuconfig.png
 *** build kernel and install
 #+BEGIN_SRC sh
 make
+make modules_install
 make install
 make clean
 make M=drivers/mmc
