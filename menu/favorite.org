@@ -9,16 +9,23 @@
 - [[/menu/slide.html][演示文档列表]] :: 我写的一些演示文稿
 - [[http://linuxtools-rst.readthedocs.org/zh_CN/latest/index.html][Linux工具快速教程]] :: 学习Linux工具入门教程
 - [[https://git-scm.com/book/en/v2][Pro Git]] [[https://git-scm.com/book/zh/v1][中文版]] :: 学习git入门经典教程
-- [[http://www.greenteapress.com/thinkpython/][Think Python]] :: Python入门教程，良心网站
 - [[https://github.com/julycoding/The-Art-Of-Programming-By-July][编程之法：面试和算法心得]] :: 结构之法博客整理书籍
 - [[http://yeasy.gitbooks.io/docker_practice/content/][Docker —— 从入门到实践]] :: Docker书籍，良心网站
 - [[https://github.com/Flowerowl/Big-Data-Resources][机器学习相关资源]] :: 大数据/数据挖掘/推荐系统/机器学习相关资源
 - [[https://github.com/linyiqun/DataMiningAlgorithm][数据挖掘算法]] [[http://blog.csdn.net/androidlushangderen/article/details/43964589][相关文档]] :: 数据挖掘算法java实现，
 - [[https://github.com/onurakpolat/awesome-bigdata][Awesome Big Data]] :: 大数据框架和资源
 *** 博客资源
+- [[http://www.ibm.com/developerworks/cn/topics/][IBM developerWorks]] :: IBM developerWorks 技术博客
+- [[http://coolshell.cn/][酷壳]] :: 享受编程和计数带来的快乐
 - [[http://www.gocalf.com/blog/][GoCalf Blog]] :: 算法类
 - [[http://www.52nlp.cn/][我爱自然语言处理]] :: 自然语言处理类
 - [[http://www.yangzhiping.com/][阳志平]] :: 心理健康与认知科技产品
+- [[http://blog.csdn.net/lisonglisonglisong][神奕的专栏]] :: Hadoop、C++、算法
+*** 语言分类
+| 语言   | 地址         | 简介                     |
+|--------+--------------+--------------------------|
+| Python | [[http://www.greenteapress.com/thinkpython/][Think Python]] | Python入门教程，良心网站 |
+
 *** 趣味游戏
 - [[http://www.pythonchallenge.com/][Python通关挑战]] [[http://garethrees.org/2007/05/07/python-challenge/][参考解答]] :: 一个Python通关挑战
 
