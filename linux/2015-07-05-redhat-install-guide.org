@@ -20,6 +20,9 @@ Client面向娱乐办公，Workstation面向开发程序，Server面向服务器
 #+BEGIN_SRC sh
 git clone https://gitcafe.com/clone/rhtools.git
 #+END_SRC
+需要说明的是脚本中使用的是上海交大的源，如果希望使用中科大的源，
+请参考文档：[[https://lug.ustc.edu.cn/wiki/mirrors/help/centos][Centos镜像使用帮助]]。
+不过要将 =$releasever= 替换为对应的版本号，如RHEL7就替换为 =7=。
 
 ** RHEL6安装指南
 *** 制作U盘启动盘
