@@ -6,12 +6,6 @@
 
 * 语言要点
 #+HTML: <!--abstract-begin-->
-
-学习Python推荐一本书，叫 =Learning Python=，
-不过这里是另外一本书的笔记，这边书叫 =Python In a Nutshell=，
-涵盖第4章的内容，也就是对Python的基本语法进行介绍。
-#+HTML: <!--abstract-end-->
-
 Python对程序格式有较强的限定，如下所示：
 - Python的注释符为 =#=
 - Python行尾不需要加额外的字符以表示结束
@@ -23,6 +17,7 @@ Python对程序格式有较强的限定，如下所示：
 - Python源代码默认只接受ASCII字符集
   - 要使用其他字符集，需要加上编码声明，
     如 =# -*- coding: utf-8 -*-=
+#+HTML: <!--abstract-end-->
 
 ** 数据与操作
 *** 数据类型
@@ -60,18 +55,18 @@ del x[::2]                              # x = [3, 5]
 - l.count(x) :: x出现次数
 - l.index(x) :: x出现下标
 - l.append(x) :: 在尾部加入x
-- l.extend(x) :: 在为不扩展x
-- l.insert(i, x) :: 在下表i处插入x
+- l.extend(x) :: 插入x中的所有元素，append则是将x当作一个元素插入
+- l.insert(i, x) :: 在下标i处插入x
 - l.remove(x) :: 删除x第一次出现，如果未出现则引发异常
-- l.pop([i]) :: 删除下表为i的元素，如果未指定i，就删除最后一个元素，
+- l.pop([i]) :: 删除下标为i的元素，如果未指定i，就删除最后一个元素，
      返回删除的元素，如果下标越界，引发异常
 - l.reverse() :: 反转
 - l.sort(cmp=cmp, key=None, reverse=False) :: 排序，
      key的意思是比较key(x)而不是比较x本身。
 *** 集合操作
-- s.copy() :: shallow copyx
+- s.copy() :: shallow copy
 - s.difference(s1) :: s出现s1未出现
-- s.intersection(s1) :: s和S1同时出现
+- s.intersection(s1) :: s和s1同时出现
 - s.issubset(s1) :: s是s1的子集
 - s.issuperset(s1) :: s1是s的子集
 - s.symmetric_difference(s1) :: 只在s和s1其一出现
@@ -90,7 +85,7 @@ del x[::2]                              # x = [3, 5]
 - d.get(k[, x]) :: 这个函数非常有用，如果k存在就返回d[k]，
      否则返回x，如果未指定x就返回None
 - d.clear() :: 清除
-- d.update(d1) :: =for k in d1: d[k] = d1[k]=
+- d.update(d1) :: 效果上等价于：=for k in d1: d[k] = d1[k]=
 - d.setdefault(k[, x]) :: 如果k存在就返回d[k]，
      否则将d[k]设置为x并返回
 - d.pop(k[, x]) :: 弹出k，如果没有找到就返回x，
@@ -326,7 +321,7 @@ User.print_static()
 - getattr(obj, "name", None) :: 如果未找到返回None
 - delattr(obj, "name") :: =del obj.__dict__["name"]=
 
-索引操作符 =[]= 页可以重载，
+索引操作符 =[]= 也可以重载，
 自定义 =__setitem__=、=__getitem__= 和 =__delitem__= 即可。
 函数对象/仿函数通过定义 =__call__= 来重载。
 

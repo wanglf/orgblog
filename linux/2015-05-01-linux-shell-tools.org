@@ -324,6 +324,13 @@ vmstat [options] [delay [count]]
 | p partition | 分区统计信息                       |
 | S unit      | 指定单位，k/K，m/M                 |
 *** mpstat
+#+BEGIN_SRC sh
+mpstat [-A] [-u] [-V] [-I {SUM|CPU|SCPU|ALL}] [-P {cpu [,...]|ON|ALL}] [interval[count]]
+#+END_SRC
+- -A :: 等价于 =-u -I ALL -P ALL=
+- -I {SUM|CPU|SCPU|ALL} :: 中断统计信息
+- -P {cpu [,...]|ON|ALL} :: 指定要报告的CPU
+
 * 其它工具
 ** find
 find命令可以用 =-type= 指定文件类型：
@@ -358,8 +365,7 @@ find . -name "*.c" or -name "*.cpp"     # find c/c++ files
 #+END_SRC
 
 * 参考资料
-- [[http://linuxtools-rst.readthedocs.org/zh_CN/latest/][Linux工具快速教程]] :: 建议初学者必读，涵盖了Linux必备基本操作
-
+- [[http://linuxtools-rst.readthedocs.org/zh_CN/latest/][Linux工具快速教程]]
 - [[http://www.grymoire.com/Unix/index.html][The Grymoire - home for UNIX wizards]]
 - [[http://c.biancheng.net/cpp/shell/][Linux Shell脚本教程：30分钟玩转Shell脚本编程]]
 - [[http://www.w3cschool.cc/linux/linux-shell.html][w3cschool：Shell 教程]]
