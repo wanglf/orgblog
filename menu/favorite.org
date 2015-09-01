@@ -17,6 +17,8 @@
 *** 博客资源
 - [[http://www.ibm.com/developerworks/cn/topics/][IBM developerWorks]] :: IBM developerWorks 技术博客
 - [[http://coolshell.cn/][酷壳]] :: 享受编程和计数带来的快乐
+- [[http://blog.codinglabs.org/][CodingLabs]] :: 算法、概率
+- [[http://edsionte.com/techblog/][edsionte's TechBlog]] :: Linux内核、内存管理
 - [[http://www.gocalf.com/blog/][GoCalf Blog]] :: 算法类
 - [[http://www.52nlp.cn/][我爱自然语言处理]] :: 自然语言处理类
 - [[http://www.yangzhiping.com/][阳志平]] :: 心理健康与认知科技产品
