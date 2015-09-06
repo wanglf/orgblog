@@ -4,6 +4,17 @@
 #+LATEX_CLASS: latex-doc
 #+PAGE_TAGS: git
 
+* 基本概念
+每一个git仓库都有一个 =.git= 目录，该目录下主要存在如下文件：
+| branches/   | 分支信息，该目录已不再使用                  |
+| config      | 配置信息                                    |
+| description | 描述信息                                    |
+| HEAD        | 头指针                                      |
+| hooks/      | 用于在特定事件下触发的脚本                  |
+| info/       | 包含 =exclude= 文件，用于指定要忽略的文件   |
+| objects/    | 数据对象，包括：commits、trees、blobs、tags |
+| refs/       | 包括分支指针，远程指针，标签指针            |
+
 * 基本用法
 ** 参数配置
 #+BEGIN_SRC sh
@@ -29,6 +40,18 @@ git status                              # 查看项目状态
 git log                                 # 查看日志
 git diff <commit>                       # 查看相对于指定提交的更改
 #+END_SRC
+
+仓库中的文件有三种状态，其转换关系如下图所示：
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/git/git-status.png
+#+END_CENTER
+
+下图展示了用于查看不同节点间差异的方法。
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/git/git-diff-status.png
+#+END_CENTER
 
 *** 分支管理
 #+BEGIN_SRC sh
@@ -209,3 +232,4 @@ git rm -r --cached <files>              # 撤销add添加的文件
 * 参考资料
 - [[http://git-scm.com/book/zh/v1][Pro Git 1st Edition中文版]]
 - [[https://www.atlassian.com/git/tutorials/][Become a git guru]]
+- [[http://www.ibm.com/developerworks/cn/opensource/os-cn-tourofgit/][开源分布式版本控制工具 —— Git之旅]]
