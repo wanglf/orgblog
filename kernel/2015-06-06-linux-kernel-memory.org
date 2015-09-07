@@ -424,6 +424,10 @@ Linux采用三级页表进行转换，分别是PGD、PMD、PTE，
 file:fig/kmem/page-table.jpg
 #+END_CENTER
 
+页表其本质就是页框的数组，只不过用一维数组不够用，要用多维来节省存储空间。
+而具体的每个页表项就是一个无符号长整型，高位31-12表示页框地址，
+低位表示属性。为什么低12位可以留作它用呢？因为每个页框的大小是4KB。
+
 Linux物理内存管理通过分页机制实现，分页可以让系统将页面拼凑出程序需要的大块内存，
 而不必连续页面。
 当然连续页面的好处是能降低TLB刷新率，为了降低刷新率，
@@ -437,6 +441,19 @@ Linux物理内存管理通过分页机制实现，分页可以让系统将页面
 #+ATTR_LATEX: :float t :placement [H] :width 6cm
 file:fig/kmem/page-manage.jpg
 #+END_CENTER
+
+地址转换过程分为如下几个步骤：
+1. 从CR3寄存器读取PGD所在基地址，从虚拟地址（也叫线性地址）第一部分获取页目录项索引，
+   相加得到页目录项物理地址。
+2. 读取PGD项，从中取出PUD基地址
+3. 从虚拟地址第二部分获取PUD索引，和PUD基地址相加得PUD物理地址
+4. 读取PUD项，从中取出PMD基地址
+5. 从虚拟地址第三部分获取PMD索引，和PMD基地址相加得PMD物理地址
+6. 读取PMD项，从中取出PTE基地址
+7. 从虚拟地址第四部分获取PTE索引，和PTE基地址相加得PTE物理地址
+8. 读取PTE项，从中取出物理页基地址
+9. 从虚拟地址第五部分获取页内偏移，和物理页基地址相加得到最终物理地址
+10. 最后可以从物理地址得到需要的数据
 
 ** 页缓存
 页缓存page cache本质上应该叫disk cache，因为缓存的目的起始是为了减少磁盘IO。
@@ -483,3 +500,60 @@ Linux用 =address_space= 来描述缓存页，
 该模式能够省电，其工作原理是当一个文件缓存时间到期后，
 刷新所有到期文件。当然必须要配置到期时间足够长，
 如10分钟，这样的后果就是一旦崩溃，系统可能就挂了。
+
+* 进阶概念
+** vmalloc源码分析
+vmalloc整个区由VMALLOC_START和VMALLOC_END限定，内部有分为多个vmalloc区，
+间隔为4KB，由 =vm_struct= 描述每个区，
+所有的 =vm_struct= 组成一个全局链表 =vmlist=。
+#+BEGIN_SRC cpp
+struct vm_struct {
+    struct vm_struct        *next;      // 链表下一节点
+    void                    *addr;      // 内存区起始地址
+    unsigned long           size;       // 区域大小
+    unsigned long           flags;      // 内存区类型
+    struct page             **pages;    // 每个page关联到一个物理页帧
+    unsigned int            nr_pages;   // 总page数
+    phys_addr_t             phys_addr;  // 通常为0，用于ioremap
+    const void              *caller;    // 返回地址
+};
+#+END_SRC
+
+#+BEGIN_SRC cpp
+void *vmalloc(unsigned long size)
+{
+    return __vmalloc_node_flags(size, NUMA_NO_NODE,
+                                GFP_KERNEL | __GFP_HIGHMEM);
+}
+static inline void *__vmalloc_node_flags(unsigned long size,
+                                         int node, gfp_t flags)
+{
+    return __vmalloc_node(size, 1, flags, PAGE_KERNEL,
+                          node, __builtin_return_address(0));
+}
+static void *__vmalloc_node(unsigned long size, unsigned long align,
+                            gfp_t gfp_mask, pgprot_t prot,
+                            int node, const void *caller)
+{
+    return __vmalloc_node_range(size, align, VMALLOC_START, VMALLOC_END,
+                                gfp_mask, prot, 0, node, caller);
+}
+void *__vmalloc_node_range(unsigned long size, unsigned long align,
+                           unsigned long start, unsigned long end,
+                           gfp_t gfp_mask, pgprot_t prot,
+                           unsigned long vm_flags, int node,
+                           const void *caller);
+#+END_SRC
+- size :: 要分配的大小
+- align :: 1表示将size大小的虚拟内存作为一个整体
+- start-end :: 指定VMALLOC区范围
+- gfp_mask :: 高端内存：=GFP_KERNEL | __GFP_HIGHMEM=
+- prot :: 保护标志，即内核权限：PAGE_KERNEL
+- vm_flags :: 0
+- node :: 用于分配的节点，或者 =NUMA_NO_NODE= 表示未指定节点
+- caller :: 返回地址
+
+具体的分配流程如下：
+1. =__get_vm_area_node= 查找空闲内存，由(start, end)指定范围
+2. =__vmalloc_area_node= 分配物理页框
+
