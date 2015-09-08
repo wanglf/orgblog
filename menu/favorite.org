@@ -6,30 +6,32 @@
 
 * 网站导航
 ** 计算机学习资源
-- [[/menu/slide.html][演示文档列表]] :: 我写的一些演示文稿
-- [[http://linuxtools-rst.readthedocs.org/zh_CN/latest/index.html][Linux工具快速教程]] :: 学习Linux工具入门教程
-- [[https://git-scm.com/book/en/v2][Pro Git]] [[https://git-scm.com/book/zh/v1][中文版]] :: 学习git入门经典教程
-- [[https://github.com/julycoding/The-Art-Of-Programming-By-July][编程之法：面试和算法心得]] :: 结构之法博客整理书籍
-- [[http://yeasy.gitbooks.io/docker_practice/content/][Docker —— 从入门到实践]] :: Docker书籍，良心网站
-- [[https://github.com/Flowerowl/Big-Data-Resources][机器学习相关资源]] :: 大数据/数据挖掘/推荐系统/机器学习相关资源
-- [[https://github.com/linyiqun/DataMiningAlgorithm][数据挖掘算法]] [[http://blog.csdn.net/androidlushangderen/article/details/43964589][相关文档]] :: 数据挖掘算法java实现，
-- [[https://github.com/onurakpolat/awesome-bigdata][Awesome Big Data]] :: 大数据框架和资源
 *** 博客资源
-- [[http://www.ibm.com/developerworks/cn/topics/][IBM developerWorks]] :: IBM developerWorks 技术博客
-- [[http://coolshell.cn/][酷壳]] :: 享受编程和计数带来的快乐
-- [[http://blog.codinglabs.org/][CodingLabs]] :: 算法、概率
-- [[http://edsionte.com/techblog/][edsionte's TechBlog]] :: Linux内核、内存管理
-- [[http://www.gocalf.com/blog/][GoCalf Blog]] :: 算法类
-- [[http://www.52nlp.cn/][我爱自然语言处理]] :: 自然语言处理类
-- [[http://www.yangzhiping.com/][阳志平]] :: 心理健康与认知科技产品
-- [[http://blog.csdn.net/lisonglisonglisong][神奕的专栏]] :: Hadoop、C++、算法
-*** 语言分类
-| 语言   | 地址         | 简介                     |
-|--------+--------------+--------------------------|
-| Python | [[http://www.greenteapress.com/thinkpython/][Think Python]] | Python入门教程，良心网站 |
+| 分类 |                         | 列表             |                |
+|------+-------------------------+------------------+----------------|
+| 站点 | [[/menu/slide.html][演示文档]]                | [[http://www.maiziedu.com/][麦子学院]]         | [[http://free-electrons.com/][Free Electrons]] |
+|      | [[http://www.ibm.com/developerworks/cn/topics/][IBM developerWorks]]      | [[http://www.oschina.net/blog][开源中国社区]]     | [[http://www.cnblogs.com/][博客园]]         |
+|      | [[http://blog.chinaunix.net/][ChinaUnix博客]]           | [[http://blog.itpub.net/][ITPUB]]            | [[http://blog.csdn.net/][CSDN博客]]       |
+|------+-------------------------+------------------+----------------|
+| 列表 | [[https://github.com/Flowerowl/Big-Data-Resources][机器学习相关资源]]        | [[https://github.com/onurakpolat/awesome-bigdata][Awesome Big Data]] |                |
+| 综合 | [[http://coolshell.cn/][酷壳]]                    |                  |                |
+| 算法 | [[http://blog.codinglabs.org/][CodingLabs]]              | [[http://www.gocalf.com/blog/][GoCalf Blog]]      | [[http://blog.csdn.net/lisonglisonglisong][神奕的专栏]]     |
+| 内核 | [[http://edsionte.com/techblog/][edsionte's TechBlog]]     |                  |                |
+| 语言 | [[http://www.liaoxuefeng.com/][廖雪峰]]                  | [[http://www.52nlp.cn/][我爱自然语言处理]] |                |
+| 其它 | [[http://www.yinwang.org/][王垠]]                    | [[http://www.yangzhiping.com/][阳志平]]           |                |
+|      | [[http://www.pythonchallenge.com/][Python通关挑战]] [[http://garethrees.org/2007/05/07/python-challenge/][参考解答]] |                  |                |
 
-*** 趣味游戏
-- [[http://www.pythonchallenge.com/][Python通关挑战]] [[http://garethrees.org/2007/05/07/python-challenge/][参考解答]] :: 一个Python通关挑战
+*** 书籍文档
+| 分类     |                        | 列表                      |                     |
+|----------+------------------------+---------------------------+---------------------|
+| 算法     | [[https://github.com/julycoding/The-Art-Of-Programming-By-July][编程之法]]               |                           |                     |
+| 大数据   | [[https://github.com/linyiqun/DataMiningAlgorithm][数据挖掘算法]] [[http://blog.csdn.net/androidlushangderen/article/details/43964589][相关文档]]  |                           |                     |
+| docker   | [[http://yeasy.gitbooks.io/docker_practice/content/][Docker从入门到实践]]     |                           |                     |
+| shell    | [[http://linuxtools-rst.readthedocs.org/zh_CN/latest/index.html][Linux工具快速教程]]      |                           |                     |
+| 版本控制 | [[https://git-scm.com/book/en/v2][Pro Git]] [[https://git-scm.com/book/zh/v1][中文版]]         |                           |                     |
+| Python   | [[http://www.greenteapress.com/thinkpython/][Think Python]]           | [[http://www.diveintopython3.net/][Dive Into Python3]]         | [[http://www.brpreiss.com/books/opus7/][DSA in Python]]       |
+|          | [[http://effbot.org/zone/librarybook-index.htm][The STD Python Library]] | [[http://www.network-theory.co.uk/docs/pytut/][An Introduction to Python]] | [[http://www.network-theory.co.uk/docs/pylang/][PL Reference Manual]] |
+|          | [[http://gnosis.cx/TPiP/][Text Processing]]        |                           |                     |
 
 
 ** 股票研究
