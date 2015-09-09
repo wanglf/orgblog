@@ -125,6 +125,20 @@ sudo mount /dev/sdaX /mnt/boot          # only if you separate boot partition
 sudo chroot /mnt
 sudo grub-install --root-directory=/mnt /dev/sda
 #+END_SRC
+*** 处理隐藏GRUB
+如果执行更新grub动作的时候能看到如下提示信息，则说明GRUB被隐藏了，
+启动的时候也看不到选择界面。
+#+BEGIN_SRC sh
+sudo update-grub2
+#+END_SRC
+
+#+BEGIN_QUOTE
+Generating grub configuration file ...
+Warning: Setting GRUB_TIMEOUT to a non-zero value
+when GRUB_HIDDEN_TIMEOUT is set is no longer supported.
+#+END_QUOTE
+
+处理办法是编辑 =/etc/default/grub= 注释掉 =GRUB_HIDDEN_TIMEOUT= 行。
 
 *** 通过GRUB rescue修复grub
 #+BEGIN_SRC sh
@@ -185,6 +199,16 @@ done
 Installing for i386-pc platform.
 Installation finished. No error reported.
 #+END_SRC
+
+*** 更新initramfs
+有时候删除内核模块之后，重启还是能看到已删除的模块载入到系统。
+这有很大的可能性是从initramfs中载入的，此时可以更新initramfs，
+使用如下命令。
+#+BEGIN_SRC sh
+update-initramfs -c -k 2.6.18-1-686
+#+END_SRC
+- -c :: 表示新创建一个initramfs
+- -k :: 指定内核版本，可以用 =uname -r= 获取
 
 * 参考资料
 1. [[http://askubuntu.com/questions/145241/how-do-i-run-update-grub-from-a-livecd][How do I run update-grub from a LiveCD]]
