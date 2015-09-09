@@ -1,0 +1,22 @@
+#+TITLE: C/C++习题1
+#+AUTHOR: Micky Ching
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS:
+
+* C语言习题
+
+* C++习题
+** 类的基本概念
+*** 成员函数
+#+HTML: <!--abstract-begin-->
+
+1. 构造函数和析够函数
+2. 虚函数
+   - [[http://c.biancheng.net/cpp/biancheng/view/244.html][什么是C++虚函数、虚函数的作用和使用方法]]
+
+#+HTML: <!--abstract-end-->
+
+** 内存管理
+1. 智能指针
+   - [[http://mingxinglai.com/cn/2013/01/smart-ptr/][智能指针学习笔记]]
