@@ -10,6 +10,7 @@
 | 分类 |                         | 列表             |                |
 |------+-------------------------+------------------+----------------|
 | 站点 | [[/menu/slide.html][演示文档]]                | [[http://www.maiziedu.com/][麦子学院]]         | [[http://free-electrons.com/][Free Electrons]] |
+|      | [[http://c.biancheng.net/cpp/][C语言中文网]]             |                  |                |
 |      | [[http://www.ibm.com/developerworks/cn/topics/][IBM developerWorks]]      | [[http://www.oschina.net/blog][开源中国社区]]     | [[http://www.cnblogs.com/][博客园]]         |
 |      | [[http://blog.chinaunix.net/][ChinaUnix博客]]           | [[http://blog.itpub.net/][ITPUB]]            | [[http://blog.csdn.net/][CSDN博客]]       |
 |------+-------------------------+------------------+----------------|
@@ -22,17 +23,18 @@
 |      | [[http://www.pythonchallenge.com/][Python通关挑战]] [[http://garethrees.org/2007/05/07/python-challenge/][参考解答]] |                  |                |
 
 *** 书籍文档
-| 分类     |                        | 列表                      |                     |
-|----------+------------------------+---------------------------+---------------------|
-| 算法     | [[https://github.com/julycoding/The-Art-Of-Programming-By-July][编程之法]]               |                           |                     |
-| 大数据   | [[https://github.com/linyiqun/DataMiningAlgorithm][数据挖掘算法]] [[http://blog.csdn.net/androidlushangderen/article/details/43964589][相关文档]]  |                           |                     |
-| docker   | [[http://yeasy.gitbooks.io/docker_practice/content/][Docker从入门到实践]]     |                           |                     |
-| shell    | [[http://linuxtools-rst.readthedocs.org/zh_CN/latest/index.html][Linux工具快速教程]]      |                           |                     |
-| 版本控制 | [[https://git-scm.com/book/en/v2][Pro Git]] [[https://git-scm.com/book/zh/v1][中文版]]         |                           |                     |
-| Python   | [[http://www.greenteapress.com/thinkpython/][Think Python]]           | [[http://www.diveintopython3.net/][Dive Into Python3]]         | [[http://www.brpreiss.com/books/opus7/][DSA in Python]]       |
-|          | [[http://effbot.org/zone/librarybook-index.htm][The STD Python Library]] | [[http://www.network-theory.co.uk/docs/pytut/][An Introduction to Python]] | [[http://www.network-theory.co.uk/docs/pylang/][PL Reference Manual]] |
-|          | [[http://gnosis.cx/TPiP/][Text Processing]]        |                           |                     |
-
+| 分类     |                        | 列表              |                     |
+|----------+------------------------+-------------------+---------------------|
+| 算法     | [[https://github.com/julycoding/The-Art-Of-Programming-By-July][编程之法]]               |                   |                     |
+| 大数据   | [[https://github.com/linyiqun/DataMiningAlgorithm][数据挖掘算法]] [[http://blog.csdn.net/androidlushangderen/article/details/43964589][相关文档]]  |                   |                     |
+| docker   | [[http://yeasy.gitbooks.io/docker_practice/content/][Docker从入门到实践]]     |                   |                     |
+| Linux    | [[http://linuxtools-rst.readthedocs.org/zh_CN/latest/index.html][Linux工具快速教程]]      | [[http://c.biancheng.net/cpp/linux/][Linux入门教程]]     |                     |
+| 版本控制 | [[https://git-scm.com/book/en/v2][Pro Git]] [[https://git-scm.com/book/zh/v1][中文版]]         |                   |                     |
+| Python   | [[http://www.greenteapress.com/thinkpython/][Think Python]]           | [[http://www.diveintopython3.net/][Dive Into Python3]] | [[http://www.brpreiss.com/books/opus7/][DSA in Python]]       |
+|          | [[http://effbot.org/zone/librarybook-index.htm][The STD Python Library]] | [[http://www.network-theory.co.uk/docs/pytut/][An Introduction]]   | [[http://www.network-theory.co.uk/docs/pylang/][PL Reference Manual]] |
+|          | [[http://gnosis.cx/TPiP/][Text Processing]]        |                   |                     |
+| C++      | [[http://c.biancheng.net/cpp/biancheng/cpp/rumen/][C++入门教程]]            |                   |                     |
+| Java     | [[http://www.weixueyuan.net/java/rumen/][Java入门教程]]           |                   |                     |
 
 ** 股票研究
 - [[http://www.5ye.cn/][我耶]] :: 股票网，入门知识，书籍等
