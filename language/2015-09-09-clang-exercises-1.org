@@ -20,3 +20,4 @@
 ** 内存管理
 1. 智能指针
    - [[http://mingxinglai.com/cn/2013/01/smart-ptr/][智能指针学习笔记]]
+   - [[http://zh.highscore.de/cpp/boost/smartpointers.html][第 2 章 智能指针]]

@@ -13,6 +13,7 @@
 |      | [[http://c.biancheng.net/cpp/][C语言中文网]]             |                  |                |
 |      | [[http://www.ibm.com/developerworks/cn/topics/][IBM developerWorks]]      | [[http://www.oschina.net/blog][开源中国社区]]     | [[http://www.cnblogs.com/][博客园]]         |
 |      | [[http://blog.chinaunix.net/][ChinaUnix博客]]           | [[http://blog.itpub.net/][ITPUB]]            | [[http://blog.csdn.net/][CSDN博客]]       |
+|      | [[http://www.geeksforgeeks.org/][geeksforgeeks]]           |                  |                |
 |------+-------------------------+------------------+----------------|
 | 列表 | [[https://github.com/Flowerowl/Big-Data-Resources][机器学习相关资源]]        | [[https://github.com/onurakpolat/awesome-bigdata][Awesome Big Data]] |                |
 | 综合 | [[http://coolshell.cn/][酷壳]]                    |                  |                |
@@ -33,7 +34,7 @@
 | Python   | [[http://www.greenteapress.com/thinkpython/][Think Python]]           | [[http://www.diveintopython3.net/][Dive Into Python3]] | [[http://www.brpreiss.com/books/opus7/][DSA in Python]]       |
 |          | [[http://effbot.org/zone/librarybook-index.htm][The STD Python Library]] | [[http://www.network-theory.co.uk/docs/pytut/][An Introduction]]   | [[http://www.network-theory.co.uk/docs/pylang/][PL Reference Manual]] |
 |          | [[http://gnosis.cx/TPiP/][Text Processing]]        |                   |                     |
-| C++      | [[http://c.biancheng.net/cpp/biancheng/cpp/rumen/][C++入门教程]]            |                   |                     |
+| C++      | [[http://c.biancheng.net/cpp/biancheng/cpp/rumen/][C++入门教程]]            | [[http://zh.highscore.de/cpp/boost/][Boost C++ 库]]      |                     |
 | Java     | [[http://www.weixueyuan.net/java/rumen/][Java入门教程]]           |                   |                     |
 
 ** 股票研究
