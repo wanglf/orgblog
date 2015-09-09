@@ -320,14 +320,21 @@ file:fig/kmem/process-mem.jpg
 用户就能看到经典提示 =Segmentation Fault=。
 内存区分为如下几个部分：
 - text :: 可执行文件代码，一般就叫做代码段，只读区
-- data :: 已初始化全局变量，包括静态变量
-- bss :: 全称block started by symbol，全0页，未初始化全局变量
+- data :: 已初始化全局变量，包括静态变量，保存在可执行文件中
+- bss :: 全称block started by symbol，全0页，未初始化全局变量，
+     注意text和data段在可执行文件中，而bss不在，由系统初始化
 - stack :: 存放程序临时创建的局部变量，全0页，参数和返回值都会压入栈中
 - heap :: 用于动态分配的内存段
 - additon :: 额外的text、data、bss段，用于共享库
 - files :: 内存映射的文件
 - shared :: 共享内存段
 - anonymous :: 匿名内存映射，例如关联malloc
+
+这里说明一下bss段存在的意义，实际上最简单的做法是把bss段直接当作data段处理，
+但是为了进一步优化可执行文件的大小，才引入bss段。
+既然bss段都会清0，那么就没有必要保存起来，
+当程序启动时由系统将其初始化即可。
+静态变量也是一样的道理，已初始化就放到data段，未初始化就放到bss段。
 
 下面的示例程序用来打印各段地址：
 #+BEGIN_SRC cpp :results verbatim :exports both
