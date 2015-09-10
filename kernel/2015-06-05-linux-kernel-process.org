@@ -94,6 +94,19 @@ Linux引入一个叫CFS调度，让每个进程获取总时间的\( \frac{1}{n} 
 当 =execv()= 返回时父进程就认为子进程结束了，
 实际上子进程在一个完全独立的空间运行。
 
+这里顺便在比较一下fork和vfork的区别，fork将父进程的内存数据复制到子进程，
+而vfork则共享父进程的内存数据。
+而且vfork在执行上是有要求的，子进程先执行，
+并且在子进程调用exit()/exec()之后父进程才会执行。
+并且vfork的存在也是一个历史原因，因为最初的fork没有使用COW技术，
+而很多程序fork之后调用exec来执行外部程序就退出了，
+所以复制父进程的数据显得很多余，才发明了vfork，
+而如今fork使用了COW技术，vfork又显得很多余了。
+比较有趣的是如果你在vfork子进程中调用return语句，
+因为父子栈共享，所以整个栈就回收了，
+父进程在接收到子进程退出之后开始执行vfork之后的代码，
+但是此时父进程的栈已经被回收，程序崩溃。
+
 进程间的独立性比较有助于编写简练的代码，如TCP服务端父进程accept之后返回描述符fda，
 在fork的子进程中可以直接使用fda，因为子进程会复制文件描述符，
 父进程就可以继续accept下一个请求。
@@ -114,6 +127,7 @@ Linux引入一个叫CFS调度，让每个进程获取总时间的\( \frac{1}{n} 
 当父进程先于子进程结束时，孤儿进程将有init收养。
 子进程先于父进程终止，而父进程由没有调用 =wait= 或 =waitpid= 时，
 子进程进入僵死状态。
+
 *** 进程间通信
 早期的进程间通信只有管道、信号、文件。但是很不灵活，因此后来又引入了共享内存/信号量、内存映射、消息队列。
 再后来又增加了远程进程通信，即socket。
@@ -160,6 +174,59 @@ echo "2147483648" > /proc/sys/kernel/shmmax
 通过条件变量就可以控制线程阻塞和激活。
 线程通信的效率也很高，整个程序结束时通过改变条件让子线程自己结束，
 最后逐个回收即可。
+*** 趣味习题
+#+NAME: fork_test
+#+BEGIN_SRC cpp :var flush=0
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/wait.h>
+int main()
+{
+    int i;
+
+    for(i = 2; i != 0; --i) {
+        fork();
+        printf("ppid=%d, pid=%d, i=%d\n", getppid(), getpid(), i);
+        if (flush)
+            fflush(stdout);
+    }
+
+    wait(NULL);
+    wait(NULL);
+    return 0;
+}
+#+END_SRC
+
+如果不flush，则结果如下：
+# #+CALL: fork_test(0)
+#+RESULTS:
+| ppid=25101 | pid=11464 | i=2 |
+| ppid=11464 | pid=11466 | i=1 |
+| ppid=11464 | pid=11465 | i=2 |
+| ppid=11465 | pid=11467 | i=1 |
+| ppid=11464 | pid=11465 | i=2 |
+| ppid=11464 | pid=11465 | i=1 |
+| ppid=25101 | pid=11464 | i=2 |
+| ppid=25101 | pid=11464 | i=1 |
+
+如果加上flush，则输出是这样的：
+# #+CALL: fork_test(1)
+#+RESULTS:
+| ppid=25101 | pid=11490 | i=2 |
+| ppid=11490 | pid=11491 | i=2 |
+| ppid=25101 | pid=11490 | i=1 |
+| ppid=11490 | pid=11492 | i=1 |
+| ppid=11490 | pid=11491 | i=1 |
+| ppid=11491 | pid=11493 | i=1 |
+
+简单分析一下为什么会出现如此奇怪的输出，
+如果不调用 =fflush= 父进程的内存会复制到子进程，
+所以子进程在打印的时候，顺带又打印了一次父进程的内容。
+仔细分析上面的数据关系你就会发现，
+只会在第一次fork出的子进程才会复制。
+即A两个子进程BC、只有B会打印A的内容，
+但是B只有一个子进程D，所以D也会打印B的内容。
 
 * 参考资料
 - [[http://my.oschina.net/cnyinlinux/blog/422207][Linux进程与线程的区别]]
