@@ -114,7 +114,40 @@ Linux引入一个叫CFS调度，让每个进程获取总时间的\( \frac{1}{n} 
 当父进程先于子进程结束时，孤儿进程将有init收养。
 子进程先于父进程终止，而父进程由没有调用 =wait= 或 =waitpid= 时，
 子进程进入僵死状态。
+*** 进程间通信
+早期的进程间通信只有管道、信号、文件。但是很不灵活，因此后来又引入了共享内存/信号量、内存映射、消息队列。
+再后来又增加了远程进程通信，即socket。
 
+pipe的通信起始就是利用pipefs来通信，父进程调用pipe创建两个文件描述符，
+再fork两个子进程，让两个子进程相互通信。相对来说限制比较多，
+一个只能读，一个只能写。命名管道的好处是允许无亲缘关系的进程之间通信。
+
+共享内存提供一种方式可让两个进程同时访问一块内存，但是本身没有提供同步机制，
+所以需要和信号量配合使用。另外共享内存有大小限制，
+具体数值可以查看：=cat /proc/sys/kernel/shmmax=。
+默认值为32MB，可以通过如下命令来修改：
+#+BEGIN_SRC sh
+sysctl -w kernel.shmmax=2147483648
+#+END_SRC
+也可以将如下命令放到 =/etc/rc.local= 启动文件中。
+#+BEGIN_SRC sh
+echo "2147483648" > /proc/sys/kernel/shmmax
+#+END_SRC
+不过从安全性考虑，有句格言是：不要通过共享内存来通信，要通过通信来共享内存。
+
+内存映射和共享内存有相似之处，只不过共享内存用key来指定共享区，而内存映射用文件来指定共享区。
+
+消息队列则和命名管道相似，但是可以通过发送消息来避免命名管道的同步和阻塞问题。
+同管道一样每个数据块有长度限制。
+
+补充文档：
+- [[http://blog.csdn.net/ljianhui/article/details/10128731][Linux进程间通信——使用信号]]
+- [[http://blog.csdn.net/ljianhui/article/details/10130539][Linux进程间通信——信号集函数]]
+- [[http://blog.csdn.net/ljianhui/article/details/10168031][Linux进程间通信——使用匿名管道]]
+- [[http://blog.csdn.net/ljianhui/article/details/10202699][Linux进程间通信——使用命名管道]]
+- [[http://blog.csdn.net/ljianhui/article/details/10253345][Linux进程间通信——使用共享内存]]
+- [[http://blog.csdn.net/ljianhui/article/details/10243617][Linux进程间通信——使用信号量]]
+- [[http://blog.csdn.net/ljianhui/article/details/10287879][Linux进程间通信——使用消息队列]]
 *** 进程池与线程池
 一般用数组管理一组进程ID，不用的进程将其挂起，用 =pause()=、信号量、IPC阻塞皆可。
 当有任务时将其唤醒，可以用信号将其唤醒，可以用函数指针告诉它该做什么，
