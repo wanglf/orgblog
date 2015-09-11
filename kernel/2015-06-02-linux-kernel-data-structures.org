@@ -177,7 +177,7 @@ void hlist_move_list(head, new_head);   // move list to new_head
 
 * 队列 - kfifo
 FIFO就是先进先出的意思，一般用队列表示，Linux Kernel实现了一个通用的FIFO，
-称之为kfifo。
+称之为KFIFO。
 
 本文参照linux-kernel-3.19，由于代码相对于老的接口有一些变动，
 所以对于用户来说需要作出如下一些更变。
@@ -192,14 +192,27 @@ FIFO就是先进先出的意思，一般用队列表示，Linux Kernel实现了�
 对于多个写入者，一个读取者，只需要对写入者上锁。
 反之，如果有多个读取者，一个写入者，只需要对读取者上锁。
 
+另外在实现上用到了比较特殊的技巧，内核实现了两类KFIFO，
+一种就是 =struct kfifo=，也就是动态KFIFO，data段动态分配，这里称之为动态KFIFO。
+一种是匿名KFIFO，buf段长度不为0，data段指向buf，静态分配，这里称之为静态KFIFO。
+这也是为什么几乎所有的方法都用宏定义，这样可以避免类型检查。
+
 ** 基本用法
-一般用法是在结构体中嵌入一个kfifo结构。
+一般用法是在结构体中嵌入一个kfifo结构，可以是静态KFIFO也可以是动态KFIFO。
 #+BEGIN_SRC cpp
-int kfifo_alloc(struct kfifo *fifo, unsigned int size, gfp_t gfp_mask);
-void kfifo_free(struct kfifo *fifo);
-unsigned int kfifo_avail(struct kfifo *fifo);
-unsigned int kfifo_in(struct kfifo *fifo, void *buf, unsigned int n);
-unsigned int kfifo_out(struct kfifo *fifo, void *buf, unsigned int n);
+// all fifo is a pointer
+int kfifo_alloc(fifo, unsigned int size, gfp_t gfp_mask);
+void kfifo_free(fifo);
+unsigned int kfifo_size(fifo);          // mask + 1
+unsigned int kfifo_len(fifo);           // in - out
+int kfifo_is_empty(fifo);               // in == out
+int kfifo_is_full(fifo);                // len > mask
+unsigned int kfifo_avail(fifo);
+unsigned int kfifo_reset(fifo);         // in = out = 0
+void kfifo_reset_out(fifo);             // out = in
+unsigned int kfifo_unused(fifo);        // len - (in - out)
+unsigned int kfifo_in(fifo, void *buf, unsigned int num);
+unsigned int kfifo_out(fifo, void *buf, unsigned int num);
 #+END_SRC
 
 ** 源码分析
@@ -215,7 +228,7 @@ struct __kfifo {
 };
 #+END_SRC
 
-环形队列如下图所示。
+环形队列如下图所示，读取者将out向右推，写入者将in向右推。
 
 file:fig/kds/ringbuffer.png
 
@@ -242,12 +255,24 @@ struct kfifo __STRUCT_KFIFO_PTR(unsigned char, 0, void);
      因此下文不再讨论recsize不为0的情况。
 
 这段代码设计非常精巧，我们知道kfifo中并不包含元素数据类型，元素指针类型，
-那么如果利用kfifo来确定相关数据类型呢？共同体为我们保存了这些信息，
+那么如何利用kfifo来确定相关数据类型呢？共同体为我们保存了这些信息，
 例如我们要想知道fifo的元素类型，就可以通过 =typeof(*fifo->type)= 获取。
 也就是除了buf是直接用于存储数据以外，其它的字段是为了获取类型。
+也就是说共同体内部处理fifo之外，我们并不会去关注其它变量，
+即便用其它变量也不过是利用它们获取类型，而绝不会使用它们的值。
+
+另外有个宏用于判断指针是否为kfifo。
+#+BEGIN_SRC cpp
+#define __is_kfifo_ptr(fifo)    (sizeof(*fifo) == sizeof(struct __kfifo))
+#+END_SRC
+这个宏在很多地方都有用到，这也是设计者考虑问题比较复杂所致，
+如果是kfifo，就意味着fifo->buf数组长度为0，data部分单独分配。
+如果是其它fifo，fifo->buf长度不为0，data就会指向这部分。
+这里说其它fifo是指匿名结构体，它和kfifo唯一不同之处是buf的长度不为0。
 
 *** 静态定义
-kfifo的实现中运用了大量的宏，并且比较复杂，因此先找一个比较简单的切入口，逐步分析。
+kfifo的实现中运用了大量的宏，并且比较复杂，因此先找一个比较简单的切入口，
+逐步分析。
 DECLARE_KFIFO用于静态声明一个kfifo对象。
 #+BEGIN_SRC cpp
 #define __STRUCT_KFIFO(type, size, recsize, ptrtype)                    \
@@ -264,32 +289,28 @@ DECLARE_KFIFO用于静态声明一个kfifo对象。
 - size :: kfifo可容纳的元素个数，必须是2的幂
 - buf :: 用于存放元素，=size & (size - 1)= 用于检测大小是否为2的幂
 
-DECLARE_KFIFO只是声明一个变量，要定一个kfifo还需要必要的初始化，
-一般情况使用DEFILE_KFIFO来声明并初始化一个kfifo。
+如果你仔细看就会发现DECLARE_KFIFO是一个匿名结构体，
+它和kfifo不是一回事！这也是为什么很多地方都要用到 =__is_kfifo_ptr= 的原因。
+
+DECLARE_KFIFO只是声明一个变量，初始化用如下宏，注意看下面就应该知道，
+之所以用typeof而不是直接用 =struct kfifo *= 就是因为两者不是一回事。
 #+BEGIN_SRC cpp
-#define DEFINE_KFIFO(fifo, type, size)                  \
-    DECLARE_KFIFO(fifo, type, size) =                   \
-        (typeof(fifo)) {                                \
-        {                                               \
-            {                                           \
-                .in     = 0,                            \
-                .out    = 0,                            \
-                .mask   = __is_kfifo_ptr(&(fifo)) ?     \
-                          0 :                           \
-                          ARRAY_SIZE((fifo).buf) - 1,   \
-                .esize  = sizeof(*(fifo).buf),          \
-                .data   = __is_kfifo_ptr(&(fifo)) ?     \
-                          NULL :                        \
-                          (fifo).buf,                   \
-            }                                           \
-        }                                               \
-    }
+#define INIT_KFIFO(fifo)                                                \
+    (void)({                                                            \
+            typeof(&(fifo)) __tmp = &(fifo);                            \
+            struct __kfifo *__kfifo = &__tmp->kfifo;                    \
+            __kfifo->in = 0;                                            \
+            __kfifo->out = 0;                                           \
+            __kfifo->mask = __is_kfifo_ptr(__tmp) ? 0 :                 \
+                ARRAY_SIZE(__tmp->buf) - 1;                             \
+            __kfifo->esize = sizeof(*__tmp->buf);                       \
+            __kfifo->data = __is_kfifo_ptr(__tmp) ? NULL : __tmp->buf;  \
+        })
 #+END_SRC
 
 *** 动态分配
 静态分配的情况其实比较少见，更多的是动态的分配。
 #+BEGIN_SRC cpp -n
-#define __is_kfifo_ptr(fifo)    (sizeof(*fifo) == sizeof(struct __kfifo))
 #define kfifo_alloc(fifo, size, gfp_mask)                               \
     __kfifo_int_must_check_helper(({                                    \
         typeof((fifo) + 1) __tmp = (fifo);                              \
@@ -301,60 +322,14 @@ DECLARE_KFIFO只是声明一个变量，要定一个kfifo还需要必要的初�
 #+END_SRC
 - 4 :: =typeof((fifo) + 1)= 这里为什么要加1呢，
      主要的好处是帮助确定传递的参数类型是否正确，
-     如果传递的是结构体会产生编译错误，如果传递的是数组名，
-     如 =int fifo[4]= ，typeof(fifo)的结果为 =int [4]=，
-     而typeof(fifo + 1)的结果为 =int *=
-
-*** 长度信息
-#+BEGIN_SRC cpp
-#define kfifo_size(fifo)        ((fifo)->kfifo.mask + 1)
-#define kfifo_len(fifo)                         \
-    ({                                          \
-        typeof((fifo) + 1) __tmpl = (fifo);     \
-        __tmpl->kfifo.in - __tmpl->kfifo.out;   \
-    })
-#define kfifo_is_empty(fifo)                    \
-    ({                                          \
-        typeof((fifo) + 1) __tmpq = (fifo);     \
-        __tmpq->kfifo.in == __tmpq->kfifo.out;  \
-    })
-#define kfifo_is_full(fifo)                     \
-    ({                                          \
-        typeof((fifo) + 1) __tmpq = (fifo);     \
-        kfifo_len(__tmpq) > __tmpq->kfifo.mask; \
-    })
-#define kfifo_avail(fifo)                                               \
-    __kfifo_uint_must_check_helper(({                                   \
-        typeof((fifo) + 1) __tmpq = (fifo);                             \
-        const size_t __recsize = sizeof(*__tmpq->rectype);              \
-        unsigned int __avail = kfifo_size(__tmpq) - kfifo_len(__tmpq);  \
-        (__recsize) ?                                                   \
-            ((__avail <= __recsize) ? 0 :                               \
-             __kfifo_max_r(__avail - __recsize, __recsize)) :           \
-            __avail;                                                    \
-    }))
-#+END_SRC
-
-*** 复位
-#+BEGIN_SRC cpp
-#define kfifo_reset(fifo)                               \
-    (void)({                                            \
-            typeof((fifo) + 1) __tmp = (fifo);          \
-            __tmp->kfifo.in = __tmp->kfifo.out = 0;     \
-    })
-#define kfifo_reset_out(fifo)                   \
-    (void)({                                    \
-            typeof((fifo) + 1) __tmp = (fifo);  \
-            __tmp->kfifo.out = __tmp->kfifo.in; \
-    })
-#+END_SRC
+     如果传递的是结构体会产生编译错误。如果传递的是数组名，
+     如 =int fifo[4]= ，=typeof(fifo)= 的结果为 =int [4]=，
+     而使用 =typeof(fifo + 1)= 结果为 =int *=。
+     所以可以认为主要是为了转换数组类型为指针类型。
+- 6 :: 给fifo->data分配空间
 
 *** 入队
 #+BEGIN_SRC cpp
-static inline unsigned int kfifo_unused(struct __kfifo *fifo)
-{
-        return (fifo->mask + 1) - (fifo->in - fifo->out);
-}
 static void kfifo_copy_in(struct __kfifo *fifo, const void *src,
                           unsigned int len, unsigned int off)
 {
@@ -370,7 +345,7 @@ static void kfifo_copy_in(struct __kfifo *fifo, const void *src,
 
     memcpy(fifo->data + off, src, l);
     memcpy(fifo->data, src + l, len - l);
-    smp_wmb();                          // update data before increase fifo->in
+    smp_wmb(); // update data before increase fifo->in
 }
 unsigned int __kfifo_in(struct __kfifo *fifo,
                         const void *buf, unsigned int len)
@@ -385,16 +360,13 @@ unsigned int __kfifo_in(struct __kfifo *fifo,
     fifo->in += len;
     return len;
 }
-#define kfifo_in(fifo, buf, n)                                  \
-    ({                                                          \
-        typeof((fifo) + 1) __tmp = (fifo);                      \
-        typeof(__tmp->ptr_const) __buf = (buf);                 \
-        unsigned long __n = (n);                                \
-        const size_t __recsize = sizeof(*__tmp->rectype);       \
-        struct __kfifo *__kfifo = &__tmp->kfifo;                \
-        (__recsize) ?                                           \
-            __kfifo_in_r(__kfifo, __buf, __n, __recsize) :      \
-            __kfifo_in(__kfifo, __buf, __n);                    \
+#define kfifo_in(fifo, buf, n)                          \
+    ({                                                  \
+        typeof((fifo) + 1) __tmp = (fifo);              \
+        typeof(__tmp->ptr_const) __buf = (buf);         \
+        unsigned long __n = (n);                        \
+        struct __kfifo *__kfifo = &__tmp->kfifo;        \
+        __kfifo_in(__kfifo, __buf, __n);                \
     })
 #define kfifo_in_spinlocked(fifo, buf, n, lock) \
     ({                                          \
@@ -409,7 +381,6 @@ unsigned int __kfifo_in(struct __kfifo *fifo,
 
 *** 出队
 #+BEGIN_SRC cpp
-
 static void kfifo_copy_out(struct __kfifo *fifo, void *dst,
                            unsigned int len, unsigned int off)
 {
@@ -425,7 +396,7 @@ static void kfifo_copy_out(struct __kfifo *fifo, void *dst,
 
     memcpy(dst, fifo->data + off, l);
     memcpy(dst + l, fifo->data, len - l);
-    smp_wmb();                          // copy data before increase fifo->out
+    smp_wmb(); // copy data before increase fifo->out
 }
 unsigned int __kfifo_out_peek(struct __kfifo *fifo,
                               void *buf, unsigned int len)
@@ -446,16 +417,13 @@ unsigned int __kfifo_out(struct __kfifo *fifo,
     fifo->out += len;
     return len;
 }
-#define kfifo_out(fifo, buf, n)                                 \
-    __kfifo_uint_must_check_helper(({                           \
-        typeof((fifo) + 1) __tmp = (fifo);                      \
-        typeof(__tmp->ptr) __buf = (buf);                       \
-        unsigned long __n = (n);                                \
-        const size_t __recsize = sizeof(*__tmp->rectype);       \
-        struct __kfifo *__kfifo = &__tmp->kfifo;                \
-        (__recsize) ?                                           \
-            __kfifo_out_r(__kfifo, __buf, __n, __recsize) :     \
-            __kfifo_out(__kfifo, __buf, __n);                   \
+#define kfifo_out(fifo, buf, n)                         \
+    __kfifo_uint_must_check_helper(({                   \
+        typeof((fifo) + 1) __tmp = (fifo);              \
+        typeof(__tmp->ptr) __buf = (buf);               \
+        unsigned long __n = (n);                        \
+        struct __kfifo *__kfifo = &__tmp->kfifo;        \
+        __kfifo_out(__kfifo, __buf, __n);               \
     }))
 
 #define kfifo_out_spinlocked(fifo, buf, n, lock) \
@@ -485,16 +453,12 @@ unsigned int __kfifo_out(struct __kfifo *fifo,
 IDR也是一种radix tree，每个节点有256个分支，通过一些技巧性的位运算可以得到很高的查询效率。
 
 ** 基本用法
-*** 初始化
+*** 创建与销毁
 静态初始化接口如下所示。
 #+BEGIN_SRC cpp
-#define IDR_INIT(name)                                                  \
-    {                                                                   \
-        .lock                   = __SPIN_LOCK_UNLOCKED(name.lock),      \
-    }
-#define DEFINE_IDR(name)        struct idr name = IDR_INIT(name)
+#define IDR_INIT(name) {.lock = __SPIN_LOCK_UNLOCKED(name.lock),}
+#define DEFINE_IDR(name) struct idr name = IDR_INIT(name)
 #+END_SRC
-
 
 动态初始化接口如下所示。
 #+BEGIN_SRC cpp
@@ -504,6 +468,14 @@ void idr_init(struct idr *idp)
     spin_lock_init(&idp->lock);
 }
 #+END_SRC
+
+释放接口如下：
+#+BEGIN_SRC cpp
+void idr_remove(struct idr *idp, int id);
+void idr_destroy(struct idr *idp);
+#+END_SRC
+- idr_remove :: 删除id并释放相关数据。
+- idr_destroy :: 释放所有的id映射和层。
 
 *** 分配ID
 #+BEGIN_SRC cpp
@@ -518,27 +490,25 @@ void idr_preload_end(void);
      当我们指定end的数值小于等于0的时候，默认就视为INT_MAX。
 - idr_preload_end :: 启用内核抢占。
 
-基本上使用IDR的格式如下所示。
+基本上使用IDR的流程如下所示。
 #+BEGIN_SRC cpp
+// alloc idr...
+idr_init(idr);
+
 idr_preload(GFP_KERNEL);
 spin_lock(lock);
 
-id = idr_alloc(idr, ptr, start, end, GFP_KERNEL);
+id = idr_alloc(idr, ptr, start, end, GFP_NOWAIT);
 
 spin_unlock(lock);
 idr_preload_end();
 
 if (id < 0)
     error;
-#+END_SRC
 
-*** 删除
-#+BEGIN_SRC cpp
-void idr_remove(struct idr *idp, int id);
-void idr_destroy(struct idr *idp);
+idr_remove(idr, id);
+idr_destroy(idr);
 #+END_SRC
-- idr_remove :: 删除id并释放相关数据。
-- idr_destroy :: 释放所有的id映射和层，调用该函数之后即可对idp释放。
 
 *** 查询迭代
 #+BEGIN_SRC cpp
@@ -559,8 +529,8 @@ bool idr_is_empty(struct idr *idp);
      只要idr中有一个元素，那么迭代就会调用fn，
      我们只需要设计一个fn始终返回1的函数，并调用idr_for_each即可。
      因为idr_for_each()在调用fn时发现返回非0，就会停止迭代并返回该值。
-** 源码分析
 
+** 源码分析
 假设我们要查找0x515，0x515/0x256 = 2，表示位于第1层的编号2，
 0x515%0x256 = 3，表示位于第0层的编号3，如下图所示。
 
