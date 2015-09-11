@@ -408,6 +408,25 @@ start-end         perm offset   major:minor inode  file
 #+BEGIN_SRC sh
 pmap [options] pid [...]
 #+END_SRC
+*** malloc原理
+从进程地址空间可以看到，break将堆分成两半，
+下面是已经映射的堆，上面是未映射的堆。
+提供了两个接口修改break的位置：
+#+BEGIN_SRC cpp
+int brk(void *addr);                    // return 0 for ok
+void *sbrk(intptr_t increment);         // return (void *)-1 when failed
+#+END_SRC
+
+实际malloc的实现中除了用到brk还会用到mmap，
+mmap用到堆和栈中间的一块虚拟内存，也叫文件映射区。
+malloc小于128KB的时候就调用brk，将break往高处推，
+当首次读写的时候发生缺页中断才会分配实际物理页，
+并建立映射关系。
+malloc大于128KB的时候是由mmap分配，所以会初始化为0。
+用brk分配的主要问题是高地址释放之后低地址才能释放，
+虽然释放低地址不会释放物理地址，但是好在malloc可以重用。
+当高地址空闲长度大于128KB时即可发生紧缩，降低break位置。
+
 *** 内存映射
 内存映射 =mmap= 可以将内存映射到文件上，可以访问文件来达到访问内存的目的，
 同样可以通过对内存读写来达到对设备内存的读写。
