@@ -6,8 +6,9 @@
 
 * C语言习题
 ** 关键字解释
-1. register
-
+1. C语言有哪些关键字，都有什么含义
+2. 描述__cplusplus和extern "C"
+3. 描述ifdef和if defined区别
 * C++习题
 ** 类的基本概念
 *** 成员函数

@@ -446,7 +446,11 @@ char *asctime_r(const struct tm *tm, char *buf);
 - asctime :: 转换为字符串，有竞态风险
 - asctime_r :: 避免竞态
 
-** 习题
+* 趣味习题
+
+** 语言概念
+
+*** 注释问题
 #+BEGIN_QUOTE
 C语言中使用 =/* ... */= 作为注释，设计一个在允许嵌套注释和不允许嵌套注释条件下
 都能通过编译的代码，但是在不同代码条件下执行结果不同。
@@ -462,7 +466,7 @@ char *b = /*/**/"*/"/*"/**/;
 | a    | 1        | 0          |
 | b    | "/*"     | "*/"       |
 
-
+*** 函数指针
 #+BEGIN_QUOTE
 （1） 如何调用地址为0的函数，假定函数无参数，无返回值。
 
@@ -482,7 +486,35 @@ typedef void (*func0) ();               // (1)
 typedef void (*handler) (int);          // (2)
 handler signal(int, handler);
 #+END_SRC
+*** 存储表示
+#+BEGIN_SRC cpp :includes '(<stdio.h> <string.h>)
+char a[100];
+int i;
 
+for (i = 0; i < 1000; i++)
+    a[i] = -1 - i;
+printf("strlen %d\n", strlen(a));
+#+END_SRC
+
+这个代码实际考察的是补码的表示，正数和补码相同，负数最高位为1，
+其余位取反加1。
+结果上，=a[0] = -1=，也就是0xFF，=a[1] = -2=，也就是0xFE，
+依次类推，-127表示为0x81，－128表示为0x80，
+而 =a[128] = -129=，将推出最高位，表示为0x7F。
+再依次类推，=a[254] = 0x01=，=a[255] = 0x00=。
+故总长度为255。
+当然负数的表示可以更简单的计算为 =256n - x=，其中n是最小让表达式为正的数。
+本来0x80可以表示-0的，但是用来表示-128可以表示更广的范围。
+
+#+BEGIN_SRC cpp
+union {unsigned short s; unsigned char c[2];} u;
+u.c[0] = 0x12;
+u.c[1] = 0x34;
+printf("union %d\n", u.s);
+#+END_SRC
+如果是大端，0x1234，如果是小端，0x3412。
+
+*** 函数设计
 #+BEGIN_QUOTE
 将long整形以十进制输出，接口如下。
 

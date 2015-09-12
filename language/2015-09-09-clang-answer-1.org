@@ -6,10 +6,78 @@
 
 * C语言习题
 ** 关键字解释
-1. register用于告诉编译器这是常用变量，请放到寄存器中。
-   现在一般并不希望由用户来定义，而是有编译器自动分析，
-   所以这个关键字名存实亡了。
+1. 最常用的表示类型的关键字，如下表：
+   | char | short  | int      | long | float | double |
+   | void | signed | unsigned | enum | union | struct |
 
+   在类型基础上还有修饰类型的关键字：
+   | auto | register | static | extern | const | volatile |
+   - auto :: 默认自动变量，常省略
+   - register :: 用于告诉编译器这是常用变量，请放到寄存器中。
+        现在一般并不希望由用户来指定，而是有编译器自动分析。
+        并且因为不在内存，所以不能取地址！
+   - static :: 用于限制作用域或存储位置
+   - extern :: 用于声明外部变量
+   - const :: 用于定义常量
+   - volatile :: 用于定义无缓存变量
+
+   流程控制关键字：
+   | if     | else | do      | while | for      |
+   | switch | case | default | break | continue |
+   | return | goto |         |       |          |
+
+   操作关键字：
+   | typedef | sizeof |
+
+2. 在C原文件中经常有这样的代码：
+   #+BEGIN_SRC cpp
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+...
+
+#ifdef __cplusplus
+}
+#endif
+   #+END_SRC
+   宏__cplusplus是C++编译器内置的宏，如果是C编译器就未定义，
+   如果是为了给C代码使用，就需要加上extern C以按照C语言规范编译，
+   这样就不会自动给函数重命名以支持函数重载。
+   否则按照C++规范编译会重命名函数，导致符号找不到。
+   这里要注意的是即便是C原文件也需要写这样的定义，
+   因为可以对C文件调用C++编译器。
+3. ifdef是最基本的探测宏是否定义的指令：
+   #+BEGIN_SRC cpp
+#ifndef PI
+#define ENV_THIS NO_MATH
+#endif
+
+#ifdef PI
+#define ENV_THAT HAVE_MATH
+#else
+#define ENV_THAT NO_MATH
+#endif
+   #+END_SRC
+
+   if defined也是用来监测宏定义，不过可以更复杂一点：
+   #+BEGIN_SRC cpp
+#if defined(PI) || defined(ABS)
+#define ENV_THIS NO_MATH
+#else
+#define ENV_THIS HAVE_MATH
+#endif
+   #+END_SRC
+   其实if defined只不过是if指令的子集，更灵活的其实是if指令：
+   #+BEGIN_SRC cpp
+#if (PERM == 0) || (PERM == 1)
+#define YOUR_PERM LOW_PERM
+#elif defined(YOUT_PERM_HI)
+#define YOUR_PERM HI_PERM
+#elif (PERM > 10)
+#define YOUR_PERM HI_PERM
+#endif
+   #+END_SRC
 * C++习题
 
 ** 类的基本概念
