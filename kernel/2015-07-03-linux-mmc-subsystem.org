@@ -7,7 +7,7 @@
 * 简介
 #+HTML: <!--abstract-begin-->
 
-本文参考linux-4.0内核源代码进行讲述，
+本文参考linux-4.2内核源代码进行讲述，
 侧重介绍软件结构，简要介绍协议。
 在介绍MMC子系统之前，先看一下MMC子系统在内核中的位置。
 Linux内核系统的分层结构如下图所示。
@@ -114,7 +114,6 @@ file:fig/mmc-subsys/data-struct.png
      里面进一步封装了mmc_request、mmc_command和mmc_data，
      命令包括三个类型，SBC、CMD和STOP。
 
-
 * MMC结构视图
 ** MMC总线
 *** MMC总线类型
@@ -124,17 +123,18 @@ static struct bus_type mmc_bus_type = {
     .dev_groups     = mmc_dev_groups,
     .match          = mmc_bus_match,
     .uevent         = mmc_bus_uevent,
+    .probe          = mmc_bus_probe,
+    .remove         = mmc_bus_remove,
     .shutdown       = mmc_bus_shutdown,
     .pm             = &mmc_bus_pm_ops,
 };
 #+END_SRC
 
 一旦注册就能看到目录 =/sys/bus/mmc= ，也就是说mmc表示的是总线的名字。
-注意在比较老的内核中，还有probe/remove回调函数，
-当然这些回调函数本质上会去调用驱动的对应函数。
-现在不需要去指定这样的函数了，
-因为在Linux内核中对总线和驱动的概念做了一些优化，
-并且总线上的回调和驱动的回调不能同时指定，否则内核会提出警告。
+比较有趣的是probe和remove两个函数，最早是有的，
+后来在Linux内核中对总线和驱动的概念做了一些优化，
+总线上的回调和驱动的回调不能同时指定，否则内核会提出警告。
+再后来又被加上去了，并且将mmc_driver也改成了device_driver。
 
 *** 设备属性（组）
 #+BEGIN_SRC cpp
@@ -260,6 +260,28 @@ file:fig/mmc-subsys/sd-init.png
 - mmc_sd_get_cid :: 包含从RESET到CID部分的流程。
 - mmc_sd_setup_card :: 包含从SCR到RO部分的流程。
 
+初始化的过程中会分配一个mmc_card结构来表示卡设备，
+其中会加入很多属性，这里以SD卡为例：
+#+BEGIN_SRC cpp
+MMC_DEV_ATTR(scr, "%08x%08x\n", card->raw_scr[0], card->raw_scr[1]);
+MMC_DEV_ATTR(date, "%02d/%04d\n", card->cid.month, card->cid.year);
+...
+
+static struct attribute *sd_std_attrs[] = {
+    &dev_attr_csd.attr,
+    &dev_attr_scr.attr,
+    &dev_attr_date.attr,
+    ...
+    NULL,
+};
+ATTRIBUTE_GROUPS(sd_std);
+
+struct device_type sd_type = {
+    .groups = sd_std_groups,
+};
+#+END_SRC
+设备初始化的时候设定：=card->dev.type = sd_type=。
+
 ** MMC驱动
 *** 块设备驱动
 #+BEGIN_SRC cpp
@@ -303,6 +325,21 @@ file:fig/mmc-subsys/mmc-request-fn.png
 file:fig/mmc-subsys/mmc-issue-rq.png
 #+END_CENTER
 
+** MMC请求处理
+*** 命令传输
+
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/mmc-subsys/mmc-send-cmd.png
+#+END_CENTER
+
+*** 数据传输
+
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/mmc-subsys/mmc-send-data.png
+#+END_CENTER
+
 ** MMC主机控制器
 主机控制器本身需要一个driver来控制，至于是什么类型的driver由具体的平台而定，
 可以是PCI驱动，也可以是平台驱动等等。
@@ -318,21 +355,6 @@ file:fig/mmc-subsys/mmc-issue-rq.png
 DMA传输则是通过dma_alloc_coherent来分配一致映射，
 有DMA描述表来控制DMA传输，因此驱动的主要工作就是创建描述表，
 把描述表地址写入到控制寄存器。
-
-** MMC请求处理
-*** 命令传输
-
-#+BEGIN_CENTER
-#+ATTR_LATEX: :float t :placement [H] :width 6cm
-file:fig/mmc-subsys/mmc-send-cmd.png
-#+END_CENTER
-
-*** 数据传输
-
-#+BEGIN_CENTER
-#+ATTR_LATEX: :float t :placement [H] :width 6cm
-file:fig/mmc-subsys/mmc-send-data.png
-#+END_CENTER
 
 ** MMC测试驱动
 测试驱动和块设备驱动二者只会有一个可以可卡设备匹配，

@@ -41,7 +41,7 @@ attr --> dev
 "mmc_dev_attrs[]" as (attrs)
 "ATTRIBUTE_GROUPS(mmc_dev)" as (ags)
 "mmc_dev_group" as (g)
-"mmc_dev_groups" as (gs)
+"mmc_dev_groups:\ndev_attr_type" as (gs)
 attrs --> ags
 ags --> g
 ags --> gs
@@ -69,10 +69,11 @@ start
 if (CMD5) then (Y)
 :OCR;
 #LightBlue:18V;
-:RCA SELECT CCCR CIS;
+:RCA SELECT;
+:CCCR CIS;
 
 if (UHS) then (Y)
-:TUNING;
+#LightBlue:TUNING;
 else (N)
 :HS;
 endif
@@ -95,7 +96,7 @@ if (ACMD41) then (Y)
 :SCR SSR SWITCH RO;
 
 if (UHS) then (Y)
-:TUNING;
+#LightBlue:TUNING;
 else (N)
 :HS;
 endif
@@ -136,7 +137,6 @@ probe : add disk
 #+RESULTS:
 [[file:mmc-request-fn.png]]
 
-
 ** mmc-blk-issue-rq.png
 #+BEGIN_SRC plantuml :file mmc-issue-rq.png
   [*] --> mmc_blk_issue_rq
@@ -150,7 +150,6 @@ probe : add disk
 
 #+RESULTS:
 [[file:mmc-issue-rq.png]]
-
 
 ** mmc-send-cmd.png
 #+BEGIN_SRC plantuml :file mmc-send-cmd.png
@@ -215,7 +214,6 @@ stop
 #+RESULTS:
 [[file:mmc-long-data.png]]
 
-
 ** mmc-short-data.png
 #+BEGIN_SRC plantuml :file mmc-short-data.png
 start
@@ -226,7 +224,6 @@ stop
 
 #+RESULTS:
 [[file:mmc-short-data.png]]
-
 
 ** mmc-arbit-data.png
 #+BEGIN_SRC plantuml :file mmc-arbit-data.png

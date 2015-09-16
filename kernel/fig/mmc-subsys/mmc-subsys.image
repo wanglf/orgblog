@@ -69,10 +69,11 @@ start
 if (CMD5) then (Y)
 :OCR;
 #LightBlue:18V;
-:RCA SELECT CCCR CIS;
+:RCA SELECT;
+:CCCR CIS;
 
 if (UHS) then (Y)
-:TUNING;
+#LightBlue:TUNING;
 else (N)
 :HS;
 endif
@@ -89,16 +90,13 @@ stop
 #+BEGIN_SRC plantuml :file sdio-combo-init.png
 start
 if (CMD5) then (Y)
-:OCR;
-#Pink:CID;
+:OCR CID;
 #LightBlue:18V;
-:RCA;
-#Pink:CSD;
-:SELECT CCCR CIS;
-#Pink:SETUP_SD;
+:RCA CSD SELECT;
+:CCCR CIS SETUP_SD;
 
 if (UHS) then (Y)
-:TUNING;
+#LightBlue:TUNING;
 else (N)
 :HS;
 endif
@@ -121,7 +119,7 @@ if (ACMD41) then (Y)
 :SCR SSR SWITCH RO;
 
 if (UHS) then (Y)
-:TUNING;
+#LightBlue:TUNING;
 else (N)
 :HS;
 endif
@@ -162,7 +160,6 @@ probe : add disk
 #+RESULTS:
 [[file:mmc-request-fn.png]]
 
-
 ** mmc-blk-issue-rq.png
 #+BEGIN_SRC plantuml :file mmc-issue-rq.png
   [*] --> mmc_blk_issue_rq
@@ -176,7 +173,6 @@ probe : add disk
 
 #+RESULTS:
 [[file:mmc-issue-rq.png]]
-
 
 ** mmc-send-cmd.png
 #+BEGIN_SRC plantuml :file mmc-send-cmd.png
