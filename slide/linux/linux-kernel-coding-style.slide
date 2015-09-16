@@ -73,11 +73,13 @@ change_status:
 - 需要在后面添加空格的关键字
   - if switch case for do while define
 - 在大多数二元/三元操作符的两侧要使用一个空格
-  - =  +  -  <  >  *  /  %  |  &  ^  ====  <=  >=  !=  ?  :
+
+  - ~=  +  -  <  >  *  /  %  |  &  ^  ==  <=  >=  !=  ?  :~
 - 一元操作符后面不要使用空格
-  - &  *  +  -  ~  !  sizeof  typeof  alignof  \__attribute__  defined
-- 自增/自减运算符(++/--)不要和操作变量间使用空格
-- 成员操作符(./->)前后不应有空白
+  - ~&  *  +  -  ~  !~
+  - ~sizeof  typeof  alignof  __attribute__  defined~
+- 自增/自减运算符 =++ --= 不要和操作变量间使用空格
+- 成员操作符 =. ->= 前后不应有空白
 
 *** 正确使用空格
 - 不应在小括号内侧靠近括号的地方使用空格
@@ -440,8 +442,7 @@ static void *locks_start(struct seq_file *f, loff_t *pos)
 	iter->li_pos = *pos + 1;
 	lg_global_lock(&file_lock_lglock);
 	spin_lock(&blocked_lock_lock);
-	return seq_hlist_start_percpu(&file_lock_list,
-		&iter->li_cpu, *pos);
+	return seq_hlist_start_percpu(...);
 }
 static void locks_stop(struct seq_file *f, void *v)
 	__releases(&blocked_lock_lock)
