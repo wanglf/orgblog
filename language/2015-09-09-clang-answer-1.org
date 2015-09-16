@@ -78,8 +78,40 @@ extern "C" {
 #define YOUR_PERM HI_PERM
 #endif
    #+END_SRC
-* C++习题
 
+4. 首先看sizeof对空类计算的结果：
+   #+BEGIN_SRC cpp
+class empty {};
+class empty_arrary { int data[0]; };
+   #+END_SRC
+   如果用g++编译，对empty算出来是1，对empty_array算出来是0，
+   但这不是说答案应该是这样的，为此需要看一下标准C的说法，
+   标准C不允许0大小的对象，即0长数组、空结构、空共同体都是不允许的。
+   所以这种写法没有可移植性。
+
+   而C++标准则允许空类，empty应当是1，这是为了保证每个对象都有一个独立的地址。
+
+   如果是对含有多种类型的类进行计算，那么要考虑内存对齐，
+   这里假定b表示一个bool，s表示一个short，i表示一个int：
+   对于class b，长度为b1，class bs，长度为4，布局为b2s2，
+   class bsb，长度为6，布局为b2s2b2，class bib，长度为12，布局为b4i4b4，
+   class bsi，长度为8，布局为b2s2i4。
+   如果添加packed属性，即如下所示：
+   #+BEGIN_SRC cpp
+struct pbsi {bool b; short s; int i;} __attribute__((__packed__));
+   #+END_SRC
+   那么长度为7。此外可以使用冒号语法来限定每个段的长度，如下：
+   #+BEGIN_SRC cpp
+struct bss2 {bool b:6; short s:1; short s1:1;}
+   #+END_SRC
+   长度为2，不过实际值可能和预期是不一样的，如：
+   #+BEGIN_SRC cpp
+struct bsi4 {bool b:6; short s:1; int i:9;};
+   #+END_SRC
+   长度为4，这里如果简单相加得到的结果是2个字节，显然和实际编译结果不一样。
+   但是加上 =__attribute__((packed))= 就能得到2个字节。
+   所以在使用上，如果确实需要压缩，那么就有必要添加packed属性。
+* C++习题
 ** 类的基本概念
 *** 成员函数
 #+HTML: <!--abstract-begin-->
