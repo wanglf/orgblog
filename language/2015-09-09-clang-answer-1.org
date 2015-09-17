@@ -6,6 +6,7 @@
 
 * C语言习题
 ** 关键字解释
+#+HTML: <!--abstract-begin-->
 1. 最常用的表示类型的关键字，如下表：
    | char | short  | int      | long | float | double |
    | void | signed | unsigned | enum | union | struct |
@@ -28,6 +29,8 @@
 
    操作关键字：
    | typedef | sizeof |
+
+#+HTML: <!--abstract-end-->
 
 2. 在C原文件中经常有这样的代码：
    #+BEGIN_SRC cpp
@@ -114,8 +117,6 @@ struct bsi4 {bool b:6; short s:1; int i:9;};
 * C++习题
 ** 类的基本概念
 *** 成员函数
-#+HTML: <!--abstract-begin-->
-
 1. 构造函数是用来初始化对象的，不能有返回值。
    构造函数相比于其它函数有其特别之处，可以使用初始化列表，
    初始化列表先于函数体执行。
@@ -125,8 +126,6 @@ struct bsi4 {bool b:6; short s:1; int i:9;};
 
    多个文件的全局变量构造函数调用顺序不确定，
    静态对象在函数首次调用时创建，程序退出时释放。
-
-#+HTML: <!--abstract-end-->
 
 2. 同一个类中不允许对函数重定义，但是在继承层次中却允许不同层次去定义相同的函数，
    以实现在不同层次完成不同的功能。
