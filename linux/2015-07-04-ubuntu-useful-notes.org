@@ -114,6 +114,33 @@ service nfs-kernel-server restart
 mount -t nfs -o proto=tcp,port=2049,nolock 192.168.1.67:/home/micky/share/nfs /mnt/
 #+END_SRC
 
+*** 自动挂载USB设备
+创建文件 =/etc/udev/rules.d/87-usb-automount.rules=
+
+#+BEGIN_SRC sh
+KERNEL!="sd[a-z][0-9]", GOTO="exit_automount"
+# Import FS info
+IMPORT{program}="/sbin/blkid -o udev -p %N"
+# Get a label if present, otherwise specify one
+ENV{ID_FS_LABEL}!="", ENV{dir_name}="%E{ID_FS_LABEL}"
+ENV{ID_FS_LABEL}=="", ENV{dir_name}="Disk-%k"
+# Global mount options
+ACTION=="add", ENV{mount_options}="relatime"
+# Filesystem-specific mount options
+ACTION=="add", ENV{ID_FS_TYPE}=="vfat|ntfs", ENV{mount_options}="$env{mount_options},utf8,gid=100,umask=002"
+# Mount the device
+ACTION=="add", RUN+="/bin/mkdir -p /media/%E{dir_name}", RUN+="/bin/mount -o $env{mount_options} /dev/%k /media/%E{dir_name}"
+# Clean up after removal
+ACTION=="remove", ENV{dir_name}!="", RUN+="/bin/umount /dev/%k"
+ACTION=="remove", ENV{dir_name}!="", RUN+="/bin/umount -l /media/%E{dir_name}", RUN+="/bin/rmdir /media/%E{dir_name}"
+# Exit
+LABEL="exit_automount"
+#+END_SRC
+
+更新配置：
+#+BEGIN_SRC sh
+udevadm control --reload-rules
+#+END_SRC
 ** 启动管理
 *** 通过USB Live CD安装grub
 #+BEGIN_SRC sh
