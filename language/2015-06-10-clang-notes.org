@@ -47,7 +47,6 @@ char *const *(*next)()                  // B
 对于B，就是一个函数指针，返回一个二级指针，第一级为常量指针，
 第二级就是一个普通二级指针，即指向一个指针。
 
-
 *** 运算符优先级
 #+BEGIN_CENTER
 #+ATTR_LATEX: :float t :placement [H] :width 6cm
