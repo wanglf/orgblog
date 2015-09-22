@@ -112,7 +112,6 @@ wait_for_completion(x);
 complete(x);
 #+END_SRC
 
-
 * 内核同步方法
 所谓同步方法，目的是为了让临界资源得到保护，防止竞态出现。
 如果不去保护临界资源，多个线程同时访问和修改会造成状态混乱。
@@ -162,6 +161,34 @@ int test_bit(int nr, void *addr);
 #+END_SRC
 *** 内存屏障
 屏障的作用是确保对变量的操作是按顺序完成的，主要可以防止编译器优化。
+*** PERCPU变量
+PERCPU数据存储在数组中，将index关联到一个对应的CPU，
+因为只能有一个CPU访问，所以不需要关注并发问题。
+#+BEGIN_SRC c
+unsigned long my_percpu[NR_CPUS];
+int cpu;
+
+cpu = get_cpu();			/* disable kernel preemption */
+my_percpu[cpu]++;
+put_cpu();				/* enable kernel preemption */
+#+END_SRC
+上面的代码禁用了抢占，所以不要长期占用。
+之所以要禁止抢占，是因为如果拿到cpu号又调度出去，
+会导致拿到的cpu号就是错误的。
+
+#+BEGIN_SRC c
+DEFINE_PER_CPU(type, name);
+get_cpu_var(name)++;
+put_cpu_var(name);
+#+END_SRC
+
+#+BEGIN_SRC c
+void *alloc_percpu(type);
+get_cpu_var(ptr);
+/* do something on ptr */
+put_cpu_var(ptr);
+void free_percpu(const void *);
+#+END_SRC
 
 *** 自旋锁
 自旋锁调用方法很简单：
