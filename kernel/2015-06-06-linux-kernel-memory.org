@@ -4,39 +4,24 @@
 #+LATEX_CLASS: latex-doc
 #+PAGE_TAGS: linux kernel memory
 
-* 基本概念
-** 内存管理
+* 常用接口
 #+HTML: <!--abstract-begin-->
+虚拟地址空间由CPU决定字长决定，按3:1将低地址部分分给用户空间，
+少的部分留给内核。
 
-Linux内核将物理页作为基本管理单元，32位机上一页为4KB，
-64位机上一页为8KB。内核中用 =page= 来描述物理页。
-由于每个物理页都需要一个 =page= 来描述，所有该结构体必须十分紧凑，
-另外要注意它只是描述物理页，而不是物理页中的数据。
-- count :: 当有人使用该页面的时候，计数器就不为0，使用者可以是page cache，
-     private数据或进程页表。
-- virtual :: 用于指向页面的虚拟地址，对于高端内存来说，如果没有做映射，
-     该字段就指向NULL
+内核将内核地址空间分为如下三个区：
+- ZONE_DMA :: 可以执行DMA操作
+- ZONE_NORMAL :: 即线性映射部分
+- ZONE_HIGHMEM :: 非永久性映射区
 
-内核将内存分为三个区，不同的区有不同的职能。
-- ZONE_DMA :: 可以执行DMA
-- ZONE_NORMAL :: 包含通常意义上映射的页面
-- ZONE_HIGHMEM :: 该区域的内存没有做永久性映射
-
+内核部分的地址和物理内存可以直接关联，也就是线性映射。
+如果内核分到的物理地址比地址空间大，那么多余的部分就不能通过线性映射访问，
+这就是所谓的高端内存。
+而64位CPU由于其寻址空间非常大，就没有高端内存了。
+高端内存只对内核空间有影响，用户空间进程总是通过页表访问内存。
 #+HTML: <!--abstract-end-->
 
-*** 获取内存
-#+BEGIN_SRC c
-struct page *alloc_pages(gfp_t gfp_mask, unsigned int order);
-void *page_address(struct page *page);
-
-struct page *alloc_page(gfp_t gfp_mask);
-unsigned long get_zeroed_page(unsigned int gfp_mask);
-
-void __free_pages(struct page *page, unsigned int order);
-void free_pages(unsigned long addr, unsigned int order);
-void free_page(unsigned long addr);
-#+END_SRC
-
+** 获取内存
 #+BEGIN_SRC c
 void *kmalloc(size_t size, gfp_t flags);
 void kfree(const void *ptr);
@@ -82,11 +67,6 @@ vmalloc()只保证虚拟地址连续，而不保证物理地址连续，
 虽然大多情况下并不需要物理地址连续，但是出于性能上的考虑，
 内核一般不会用vmalloc，因为它需要设置页表项，并映射分散页。
 
-#+BEGIN_CENTER
-#+ATTR_LATEX: :float t :placement [H] :width 6cm
-file:fig/kmem/high-mem.png
-#+END_CENTER
-
 在有些情况下需要频繁的分配某些结构体，为了针对这样的情况做效率上的提升，
 内核引入了一个slab层，用于维护一个特定对象的缓存链表，
 当需要该对象时，可以直接从链表去取。
@@ -98,7 +78,7 @@ file:fig/kmem/high-mem.png
 即在内核中除了很多专用slab分配器，还有很多是针对 =kmalloc= 提供的分配器。
 
 #+BEGIN_SRC c
-struct kmem_cache * kmem_cache_create(const char *name, size_t size,
+struct kmem_cache *kmem_cache_create(const char *name, size_t size,
 	size_t align, unsigned long flags, void (*ctor)(void *));
 void *kmem_cache_alloc(struct kmem_cache *cachep, gfp_t flags);
 void kmem_cache_free(struct kmem_cache *cachep, void *objp);
@@ -115,64 +95,7 @@ void *kmap(struct page *page);
 void kunmap(struct page *page);
 #+END_SRC
 
-PERCPU数据存储在数组中，将index关联到一个对应的CPU，
-因为只能有一个CPU访问，所以不需要关注并发问题。
-#+BEGIN_SRC c
-unsigned long my_percpu[NR_CPUS];
-int cpu;
-
-cpu = get_cpu();			/* disable kernel preemption */
-my_percpu[cpu]++;
-put_cpu();				/* enable kernel preemption */
-#+END_SRC
-上面的代码禁用了抢占，所以不要长期禁止抢占。
-之所以要禁止抢占，因为如果拿到cpu号又调度出去，那么此时的cpu号就是错的。
-
-#+BEGIN_SRC c
-DEFINE_PER_CPU(type, name);
-get_cpu_var(name)++;
-put_cpu_var(name);
-#+END_SRC
-
-#+BEGIN_SRC c
-void *alloc_percpu(type);
-get_cpu_var(ptr);
-/* do something on ptr */
-put_cpu_var(ptr);
-void free_percpu(const void *);
-#+END_SRC
-*** 内存碎片
-内存碎片分为两种，一种叫内部碎片，一种叫外部碎片。内部和外部其实是相对于进程来说的，
-进程在请求内存时，系统在很多时候都不是精确分配，往往会多分配一点，
-这通常是出于性能和边界等考虑，那么多处的部分就是内部碎片。
-而外部碎片是因为系统在分配存储时，由于某些原因留下很多较小的空闲段，
-这些段因为太小，不能满足分配请求，就会形成外部碎片。
-
-简单的说，固定分区存在内部碎片，可变式分区存在外部碎片，
-页式虚拟存储存在内部碎片，段式虚拟存储存在外部碎片。
-例如最后一页装不满就形成内部碎片，而5K的段换出后，再换进4K的段，剩下的1K就是外部碎片。
-
-1. 连续分配方式
-
-   出现在早期，具体还可以分为：单一连续分配、固定分区分配、动态分区分配、动态重定位分区分配。
-
-2. 分页管理
-
-   连续分配会出现很多碎片，分页管理是一个进程占用多个不连续的页，
-   系统为每个进程建立一张页面映射表，简称页表，页表的作用是实现从页号到物理块号的映射。
-   页面管理方式会在进程最后一页形成内部碎片。
-
-3. 分段管理
-
-   分段和分页思路上是完全一样的，只不过页面大小是固定的，而段的长度不是固定的。
-   所以分段管理存在外部碎片。
-
-4. 段页式管理
-
-   分页可以更好的管理内存，分段可以更好的满足用户需求，
-   结合起来将用户程序分成若干段，每个段分若干页，地址结构包括段号、段内页号和页内偏移三部分。
-
-** DMA
+** 直接内存访问（DMA）
 DMA允许外部设备和内存直接传输数据，而不需要CPU参与，由于没有CPU，
 那么就需要一个DMA控制器。
 数据传输以两种方式触发，第一种为软件请求，以read为例：
@@ -327,6 +250,7 @@ struct dma_pool *dma_pool_create (const char *name, struct device *dev,
                                   size_t size, size_t align,
                                   size_t allocation)
 #+END_SRC
+* 内存管理
 ** 进程地址空间
 内核不仅要管理自己的内存，还需要管理用户空间进程的内存，
 这部分内存称之为进程地址空间。
@@ -439,31 +363,6 @@ start-end         perm offset   major:minor inode  file
 #+BEGIN_SRC sh
 pmap [options] pid [...]
 #+END_SRC
-*** malloc原理
-从进程地址空间可以看到，break将堆分成两半，
-下面是已经映射的堆，上面是未映射的堆。
-提供了两个接口修改break的位置：
-#+BEGIN_SRC cpp
-int brk(void *addr);                    // return 0 for ok
-void *sbrk(intptr_t increment);         // return (void *)-1 when failed
-#+END_SRC
-
-实际malloc的实现中除了用到brk还会用到mmap，
-mmap用到堆和栈中间的一块虚拟内存，也叫文件映射区。
-malloc小于128KB的时候就调用brk，将break往高处推，
-当首次读写的时候发生缺页中断才会分配实际物理页，
-并建立映射关系。
-malloc大于128KB的时候是由mmap分配，所以会初始化为0。
-用brk分配的主要问题是高地址释放之后低地址才能释放，
-虽然释放低地址不会释放物理地址，但是好在malloc可以重用。
-当高地址空闲长度大于128KB时即可发生紧缩，降低break位置。
-
-*** 内存映射
-内存映射 =mmap= 可以将内存映射到文件上，可以访问文件来达到访问内存的目的，
-同样可以通过对内存读写来达到对设备内存的读写。
-用户调用 =mmap= 时，最终会调用到 =file_operations= 提供的 =mmap=。
-建立页表可以调用 =remap_page_range= 一次建立所有映射区页表，
-也可以用 =vma_struct= 的 =nopage= 在缺页时现场建立。
 
 ** 页表管理
 虽然用户进程只会操作虚拟地址，但是处理器实际上是操作物理地址。
@@ -512,6 +411,53 @@ file:fig/kmem/page-manage.jpg
 9. 从虚拟地址第五部分获取页内偏移，和物理页基地址相加得到最终物理地址
 10. 最后可以从物理地址得到需要的数据
 
+** 内存管理
+Linux内核将物理页作为基本管理单元，32位机上一页为4KB，
+64位机上一页为8KB。内核中用 =page= 来描述物理页。
+由于每个物理页都需要一个 =page= 来描述，所以该结构体必须十分紧凑，
+另外要注意它只是描述物理页，而不是物理页中的数据。
+- count :: 当有人使用该页面的时候，计数器就不为0，使用者可以是page cache，
+     private数据或进程页表。
+- virtual :: 用于指向页面的虚拟地址，对于高端内存来说，如果没有做映射，
+     该字段就指向NULL
+
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/kmem/high-mem.png
+#+END_CENTER
+
+*** 内存碎片
+内存碎片分为两种，一种叫内部碎片，一种叫外部碎片。
+内部和外部其实是相对于进程来说的，
+进程在请求内存时，系统在很多时候都不是精确分配，往往会多分配一点，
+这通常是出于性能和边界等考虑，那么多处的部分就是内部碎片。
+而外部碎片是因为系统在分配存储时，由于某些原因留下很多较小的空闲段，
+这些段因为太小，不能满足分配请求，就会形成外部碎片。
+
+简单的说，固定分区存在内部碎片，可变式分区存在外部碎片，
+页式虚拟存储存在内部碎片，段式虚拟存储存在外部碎片。
+例如最后一页装不满就形成内部碎片，而5K的段换出后，再换进4K的段，剩下的1K就是外部碎片。
+
+1. 连续分配方式
+
+   出现在早期，具体还可以分为：单一连续分配、固定分区分配、动态分区分配、动态重定位分区分配。
+
+2. 分页管理
+
+   连续分配会出现很多碎片，分页管理是一个进程占用多个不连续的页，
+   系统为每个进程建立一张页面映射表，简称页表，页表的作用是实现从页号到物理块号的映射。
+   页面管理方式会在进程最后一页形成内部碎片。
+
+3. 分段管理
+
+   分段和分页思路上是完全一样的，只不过页面大小是固定的，而段的长度不是固定的。
+   所以分段管理存在外部碎片。
+
+4. 段页式管理
+
+   分页可以更好的管理内存，分段可以更好的满足用户需求，
+   结合起来将用户程序分成若干段，每个段分若干页，地址结构包括段号、段内页号和页内偏移三部分。
+
 ** 页缓存
 页缓存page cache本质上应该叫disk cache，因为缓存的目的起始是为了减少磁盘IO。
 用户在向磁盘写入数据的时候，实际上是写入到内存中，
@@ -558,10 +504,10 @@ Linux用 =address_space= 来描述缓存页，
 刷新所有到期文件。当然必须要配置到期时间足够长，
 如10分钟，这样的后果就是一旦崩溃，系统可能就挂了。
 
-* 进阶概念
-** vmalloc源码分析
-vmalloc整个区由VMALLOC_START和VMALLOC_END限定，内部有分为多个vmalloc区，
-间隔为4KB，由 =vm_struct= 描述每个区，
+** 进阶概念
+*** vmalloc
+vmalloc在地址空间范围由VMALLOC_START和VMALLOC_END限定，
+内部又分为多个vmalloc区，间隔为4KB，由 =vm_struct= 描述每个区，
 所有的 =vm_struct= 组成一个全局链表 =vmlist=。
 #+BEGIN_SRC cpp
 struct vm_struct {
@@ -613,7 +559,31 @@ void *__vmalloc_node_range(unsigned long size, unsigned long align,
 具体的分配流程如下：
 1. =__get_vm_area_node= 查找空闲内存，由(start, end)指定范围
 2. =__vmalloc_area_node= 分配物理页框
+*** malloc
+从进程地址空间可以看到，break将堆分成两半，
+下面是已经映射的堆，上面是未映射的堆。
+提供了两个接口修改break的位置：
+#+BEGIN_SRC cpp
+int brk(void *addr);                    // return 0 for ok
+void *sbrk(intptr_t increment);         // return (void *)-1 when failed
+#+END_SRC
 
+实际malloc的实现中除了用到brk还会用到mmap，
+mmap用到堆和栈中间的一块虚拟内存，也叫文件映射区。
+malloc小于128KB的时候就调用brk，将break往高处推，
+当首次读写的时候发生缺页中断才会分配实际物理页，
+并建立映射关系。
+malloc大于128KB的时候是由mmap分配，所以会初始化为0。
+用brk分配的主要问题是高地址释放之后低地址才能释放，
+虽然释放低地址不会释放物理地址，但是好在malloc可以重用。
+当高地址空闲长度大于128KB时即可发生紧缩，降低break位置。
+
+*** mmap
+内存映射 =mmap= 可以将内存映射到文件上，可以访问文件来达到访问内存的目的，
+同样可以通过对内存读写来达到对设备内存的读写。
+用户调用 =mmap= 时，最终会调用到 =file_operations= 提供的 =mmap=。
+建立页表可以调用 =remap_page_range= 一次建立所有映射区页表，
+也可以用 =vma_struct= 的 =nopage= 在缺页时现场建立。
 
 * 参考资料
 - [[http://c.biancheng.net/cpp/u/xitong_3/][C语言中文网－内存管理]]
