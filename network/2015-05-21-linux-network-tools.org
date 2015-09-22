@@ -104,6 +104,78 @@ wpa_supplicant -d -D wext -i wlan0 -c wpa_supplicant.conf &
 >enable_network 2
 #+END_SRC
 
+* iperf
+iperf是一个网络吞吐量测试工具，可以对TCP或UDP测试，
+要进行测试，需要配置服务端和客户端。
+** 基本参数
+*** GENERAL OPTIONS
+#+BEGIN_SRC text
+  -f, --format [kmKM]     format to report: Kbits, Mbits...
+  -i, --interval n        pause n seconds between reports
+  -l, --len n[KM]         set buffer length to n (default 8 KB)
+  -m, --print_mss         print TCP maximum segment size
+  -p, --port n            set server port to n (default 5001)
+  -u, --udp               use UDP rather than TCP
+  -w, --window n[KM]      TCP window size (socket buffer size)
+  -B, --bind <host>       bind to <host>
+  -M, --mss n             set TCP maximum segment size
+  -N, --nodelay           set TCP no delay
+  -v, --version           print version information and quit
+  -V, --IPv6Version       Set the domain to IPv6
+#+END_SRC
+*** SERVER SPECIFIC OPTIONS
+#+BEGIN_SRC text
+  -s, --server            run in server mode
+  -U, --single_udp        run in single threaded UDP mode
+  -D, --daemon            run the server as a daemon
+#+END_SRC
+
+*** CLIENT SPECIFIC OPTIONS
+#+BEGIN_SRC text
+  -b, --bandwidth n[KM]   set target bandwidth to n bits/sec
+                          This setting requires UDP (-u).
+  -c, --client <host>     connecting to <host>
+  -d, --dualtest          Do a bidirectional test simultaneously
+  -n, --num n[KM]         number of bytes to transmit
+  -r, --tradeoff          Do a bidirectional test individually
+  -t, --time n            time in seconds to transmit
+  -F, --fileinput <name>  input the data to be transmitted
+  -I, --stdin             input the data to be transmitted
+  -L, --listenport n      port to receive bidirectional tests
+  -P, --parallel n        number of parallel client threads
+  -T, --ttl n             time-to-live, for multicast
+#+END_SRC
+
+*** 其它参数
+- TCP_WINDOW_SIZE :: 环境变量，用于控制TCP缓冲区大小。
+
+** 基本用法
+要进行网络传输测试需要两台机器，同一台机器可能并没有通过网络传输，
+所以速度过快。
+
+*** 测试TCP
+启动服务端：
+#+BEGIN_SRC sh
+iperf -s -p1234
+#+END_SRC
+
+启动客户端：
+#+BEGIN_SRC sh
+# 传输30s，每2s打印一次报告
+iperf -c 192.168.0.100 -p1234 -i2 -t30
+#+END_SRC
+
+*** 测试UDP
+启动服务端：
+#+BEGIN_SRC sh
+iperf -s -p1234 -u
+#+END_SRC
+
+启动客户端：
+#+BEGIN_SRC sh
+iperf -c 192.168.0.100 -p1234 -i2 -t30 -u -b1000M
+#+END_SRC
+
 * 参考资料
 - [[http://linux.die.net/man/8/wpa_supplicant][wpa_supplicant(8) - Linux man page]]
 - [[http://linux.die.net/man/5/wpa_supplicant.conf][wpa_supplicant.conf(5) - Linux man page]]
