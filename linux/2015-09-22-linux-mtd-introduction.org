@@ -34,6 +34,9 @@ Linux没有提供对MTD整个设备进行访问的接口。
 分区信息不会保存到flash中，
 其block可能会在某个时刻坏掉，所以flash不能用来存放重要信息。
 
+NAND flash和NOR flash主要区别如下图所示：
+file:fig/mtd-utils/nand-nor-flash-cmp.png
+
 常用缩写如下：
 | MTD           | Memory Technology Device               |
 | DOC           | DiskOnChip                             |

@@ -70,6 +70,17 @@ char *strerror(int errnum);         // 将错误码转换为字符串
 size_t strlen(const char *str);     // 计算字符串长度
 #+END_SRC
 
+#+BEGIN_SRC cpp
+long int strtol(const char *nptr, char **endptr, int base);
+long long int strtoll(const char *nptr, char **endptr, int base);
+unsigned long int strtoul(const char *nptr, char **endptr, int base);
+unsigned long long int strtoull(const char *nptr, char **endptr, int base);
+#+END_SRC
+调用之后通常需要检查两个值的有效性，一个是nptr，
+需要确保其第一个字符不能为null，
+一个是endptr，要确保*endptr为null，也就是说完整的将nptr转换为数字，
+如果nptr本身不需要完整转换，也可以检查endptr是否走到指定位置。
+
 * C++中的字符串
 C++中string是以一个库的形式提供的，
 由于C++引入了命名空间的概念，所以string实际处于命名空间std中。
