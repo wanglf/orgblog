@@ -75,7 +75,7 @@ Linux没有提供对MTD整个设备进行访问的接口。
       name:       "cramfs",               // 方便识别
       offset:     0x00000000,             // 起始地址
       size:       0x00200000,             // 分区大小
-      mask_flags: MTD_WRITEABLE,          // force read-only
+      mask_flags: MTD_WRITEABLE,          // force writable
       },
       {
       name:       "jffs2",
