@@ -9,12 +9,27 @@
 ** 引言
 
 *** 引言
-#+BEGIN_QUOTE
-First off, I'd suggest printing out a copy of the GNU coding standards,
-and NOT read it.  Burn them, it's a great symbolic gesture.
-#+END_QUOTE
-
-
+*First off, I'd suggest printing out a copy of the GNU coding standards.*
+*and NOT read it.  Burn them, it's a great symbolic gesture.*
+#+BEGIN_SRC cpp
+int
+main (int argc, char *argv[])
+{
+ check:
+  if (foo.type == MOOMIN)
+    puts ("It's a moomin.");
+  else
+    {
+      do
+        {
+          twiddle (&foo, barney, wilma + fred);
+        }
+      while (foo.bar >= GIZMO_SNUFKIN_THRESHOLD);
+      goto check;
+    }
+  return 0;
+}
+#+END_SRC
 ** 缩进与空白
 *** 使用TAB缩进
 - 仅使用TAB缩进
@@ -79,7 +94,7 @@ change_status:
   - ~&  *  +  -  ~  !~
   - ~sizeof  typeof  alignof  __attribute__  defined~
 - 自增/自减运算符 =++ --= 不要和操作变量间使用空格
-- 成员操作符 =. ->= 前后不应有空白
+- 成员操作符 =. ->= 前后不应有空格
 
 *** 正确使用空格
 - 不应在小括号内侧靠近括号的地方使用空格
@@ -108,9 +123,9 @@ long *memparse(char *ptr, char **retptr);       /* good */
 - 局部变量应在最小作用域定义
 - 给含义不是很直白的数字取一个名字
 - 谨慎使用typedef定义some_t结构
-  - 用于隐藏对象，如dma_addr_t，以限定只能调用正确的函数
+  - 用于隐藏对象，如dma_addr_t，以限定只能通过函数访问
   - 清楚指定整数类型，如u8/u16...
-  - 在某些时候是"unsigned int"，而某些时候是"unsigned long"
+  - 隐藏可变类型，如在某些平台是"unsigned int"，而某些平台是"unsigned long"
   - 函数指针
 
 *** typedef可能产生的问题
@@ -197,12 +212,24 @@ EXPORT_SYMBOL(system_is_up);
 
 *** 让函数变得美观
 - 不要将多个语句（赋值）放于一行，保持代码简洁
-- 声明语句之后要加一个空行
 #+BEGIN_SRC c
 if (condition) do_this;         /* bad */
         do_everytime;
 #+END_SRC
+- 声明语句之后要加一个空行
+#+BEGIN_SRC c
+static void dump_reg_range(struct mhost *host, u16 start, u16 end)
+{
+	u16 len = end - start + 1;
+	u8 i, data[8];
 
+	for (i = 0; i < len; i += 8) {
+		int j, n = min(8, len - i);
+		memset(&data, 0, sizeof(data)); /* bad */
+		...
+	}
+}
+#+END_SRC
 *** 让函数变得小巧而健壮
 - 不要定义过长的inline函数，三行以内为宜
 - 不要自己发明轮子，使用已经定义良好的函数
@@ -219,6 +246,19 @@ if (condition) do_this;         /* bad */
 - 对于if-else语句，只要有一个分支包含多行就要使用括号
 - 如果if-else用到大括号，else需要紧跟大括号
   - do-while同理
+#+BEGIN_SRC c
+int id_to_index(int id)
+{
+	if (id < 10) {
+		return 10;
+	} else if (id < 20) {
+		pr_info("vip entered\n");
+		return 20;
+	} else {
+		return 30;
+	}
+}
+#+END_SRC
 
 *** 使用括号让代码正确并美观
 - 语句中的大括号从右侧起始
@@ -242,17 +282,23 @@ static void str2hashbuf_signed(const char *msg, int len,
 
 *** 正确定义宏
 - 单行语句使用括号将宏定义包围
-- 对于用到的参数也应该加上括号，return和goto语句除外
-
-*** 正确定义宏
 - 多行语句用do...while(0)形式包围
-
+- 参数应该加上括号：return、goto、可变参数除外
 #+BEGIN_SRC c
-#define _atomic_spin_lock_irqsave(l,f) do {     \
-        arch_spinlock_t *s = ATOMIC_HASH(l);    \
-        local_irq_save(f);                      \
-        arch_spin_lock(s);                      \
-} while(0)
+#define debug_return(val, fmt, arg...)			\
+	do {						\
+		pr_info(fmt, ##arg); return (val); 	\
+	} while (0) /* compile warning on return */
+#+END_SRC
+- 如果不用do-while下面的代码会有什么问题？
+#+BEGIN_SRC c
+int check_err(int err)
+{
+if (err < 0)
+	debug_return(err, "error occurred: %d\n", err);
+else
+	return 0;
+}
 #+END_SRC
 
 *** 不要在.c文件中使用#ifdef
@@ -290,7 +336,7 @@ static void hide_some_dev(struct some_dev *sd)
 
 *** 数组初始化
 #+BEGIN_SRC c
-const char * const btrfs_feature_set_names[3] = {
+const char *const btrfs_feature_set_names[3] = {
         [FEAT_COMPAT]    = "compat",
         [FEAT_COMPAT_RO] = "compat_ro",
         [FEAT_INCOMPAT]  = "incompat",
@@ -312,19 +358,19 @@ static const struct file_operations changer_fops = {
 #+END_SRC
 
 * 实用工具
-** Lindent
+** Lindent sed checkpatch.pl
 *** Lindent基本用法
-- 位于scripts/
+- 位于Linux内核树scripts/
 - 自动修正代码中的缩进
 - 不要完全信赖该脚本，修正完成之后最好检查一下
 
 #+BEGIN_SRC sh
 ./Lindent <filename>
 #+END_SRC
-** sed
+
 *** 去除行尾空白
 - 使用sed去除行尾空白只要一行命令
-
+- 如果使用 =--in-place= 选项记得备份
 #+BEGIN_SRC sh
 # 去除单个文件的行尾空白
 sed --in-place 's/[[:space:]]\+$//' <filename>
@@ -336,10 +382,10 @@ find -name "*.[ch]" | xargs -n 1 sed --in-place \
 's/[[:space:]]\+$//'
 #+END_SRC
 
-** checkpatch.pl
 *** checkpatch.pl帮助信息
 - 位于Linux内核树scripts/
-
+- 可以自动修复代码中的问题
+- 如果使用 =--fix-inplace= 选项记得备份
 #+BEGIN_SRC sh
 ./checkpatch.pl -h              # 查看帮助信息
 #+END_SRC
@@ -369,12 +415,21 @@ find -name "*.[ch]" | xargs -n 1 ./checkpatch.pl --no-tree -f \
 ./checkpatch.pl --no-tree --fix-inplace *.patch
 #+END_SRC
 
-** sparse
-*** 下载sparse
-sparse是由Linus Torvalds针对Linux Kernel写的静态检查脚本
+** sparse smatch flycheck
+*** 静态检查工具
+- 静态分析工具在代码通过编译之后再对代码进行分析
+- 相比编译器，对代码进行了更加严格的检查
+- 编译器负责把C源程序快速、高效地转变为可执行文件
+- 检查工具则可以花更多时间对代码进行更深入仔细的检查
+  - 数组越界访问
+  - 未定义变量使用、空指针提取
+  - 内存泄漏
+  - 使用不当的类型转换
 
+*** 下载安装sparse
+- sparse是Linus针对Linux内核写的静态检查脚本
 #+BEGIN_SRC sh
-apt-get install sparse          # 使用源下载并安装
+sudo apt-get install sparse     # 使用源下载并安装
 # 从网站抓取最新源码包
 wget http://codemonkey.org.uk/projects/git-snapshots/\
 sparse/sparse-latest.tar.xz
@@ -382,33 +437,26 @@ sparse/sparse-latest.tar.xz
 git clone http://git.kernel.org/pub/scm/devel/sparse/sparse.git
 #+END_SRC
 
-*** 安装sparse
-
 #+BEGIN_SRC sh
-make
-make install                    # 默认安装到$(HOME)/bin
+make && make install            # 默认安装到$(HOME)/bin
 # 设置搜索路径
 echo 'export PATH=$PATH:$HOME/bin/' >> ~/.bashrc
 which sparse                    # 查看sparse是否成功安装
 #+END_SRC
 
-*** sparse帮助信息
-
+*** sparse日常用法
 #+BEGIN_SRC sh
 man sparse
-#+END_SRC
-#+BEGIN_SRC text
 sparse [WARNING OPTIONS]... file.c
   -Wsparse-all          打开所有选项
 #+END_SRC
-*** sparse日常用法
 
 #+BEGIN_SRC sh
 make C=2                        # C=1仅检查要编译的C文件
 make C=2 CF="-D__CHECK_ENDIAN__"
 #+END_SRC
 #+BEGIN_SRC sh
-# 可以在Makefile里面设置默认的检查标志
+# Linux Makefile默认检查标志
 CHECKFLAGS := -D__linux__ -Dlinux -D__STDC__ \
               -Dunix -D__unix__ \
               -Wbitwise -Wno-return-void $(CF)
@@ -439,10 +487,8 @@ static void *locks_start(struct seq_file *f, loff_t *pos)
 {
 	struct locks_iterator *iter = f->private;
 
-	iter->li_pos = *pos + 1;
-	lg_global_lock(&file_lock_lglock);
 	spin_lock(&blocked_lock_lock);
-	return seq_hlist_start_percpu(...);
+	return seq_hlist_start_percpu(iter);
 }
 static void locks_stop(struct seq_file *f, void *v)
 	__releases(&blocked_lock_lock)
@@ -451,24 +497,20 @@ static void locks_stop(struct seq_file *f, void *v)
 	lg_global_unlock(&file_lock_lglock);
 }
 #+END_SRC
-** smatch
-*** 安装smatch
 
+*** 下载安装smatch
 #+BEGIN_SRC sh
 # 安装软件依赖
 sudo apt-get install libsqlite3-dev
 git clone git://repo.or.cz/smatch.git
 cd smatch
-make
-make install                    # 默认安装到$(HOME)/bin
-# 设置搜索路径方法和sparse相同
+make && make install            # 默认安装到$(HOME)/bin
+# 设置搜索路径方法同sparse
 #+END_SRC
-*** smatch帮助信息
 
+*** smatch帮助信息
 #+BEGIN_SRC sh
 smatch --help
-#+END_SRC
-#+BEGIN_SRC text
 Usage:  smatch [smatch arguments][sparse arguments] file.c
   --project=<name> or -p=<name>: project specific tests
   --spammy:  print superfluous crap.
@@ -486,8 +528,9 @@ Usage:  smatch [smatch arguments][sparse arguments] file.c
   --file-output:  print to "file.c.smatch_out".
   --help:  print this helpful message.
 #+END_SRC
+
 *** smatch日常用法
-- 对于高于2.3.37的内核，需要设置选项
+- 对于高于2.3.37的内核，需要设置内核选项
   - CONFIG_DYNAMIC_DEBUG=n
 
 #+BEGIN_SRC sh
@@ -497,6 +540,12 @@ tee warns.txt
 # 编译指定模块，如mmc
 make CHECK="smatch -p=kernel" C=2 M=drivers/mmc | tee warns.txt
 #+END_SRC
+
+*** emacs flycheck
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 8cm
+file:fig/coding-style/flycheck.png
+#+END_CENTER
 
 * 参考资料
 ** 参考资料
