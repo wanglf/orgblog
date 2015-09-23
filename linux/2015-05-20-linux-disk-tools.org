@@ -4,8 +4,9 @@
 #+LATEX_CLASS: latex-doc
 #+PAGE_TAGS: linux
 
-* fio
-** 简介
+* Linux磁盘相关工具
+** fio
+*** 简介
 #+HTML: <!--abstract-begin-->
 
 FIO的简称是flexible I/O tester，能够创建一定数量的线程以实现特定的IO操作。
@@ -22,7 +23,8 @@ fio [options] [jobfile]...
 每一个组只会受到上层中最接近的global影响。
 #+HTML: <!--abstract-end-->
 
-*** 命令行选项
+*** 参数说明
+常用命令行选项：
 | 常用选项          | 含义                              |
 |-------------------+-----------------------------------|
 | --output=filename | 将报告输出到文件                  |
@@ -33,8 +35,7 @@ fio [options] [jobfile]...
 | --showcmd         | 将jobfile转换为命令行选项         |
 | --readonly        | 检查只读安全，确保jobfile没有写入 |
 
-** job文件格式
-*** 参数类型
+参数类型：
 | 类型       | 　含义                                           |
 |------------+--------------------------------------------------|
 | str        | 字符串                                           |
@@ -42,7 +43,8 @@ fio [options] [jobfile]...
 | irange     | lower:upper或者lower-upper                       |
 |            | 多组range可以用分号或者斜杠分割                  |
 | float-list | 用冒号分割一系列浮点数                           |
-*** 常见参数
+
+常见参数：
 | 表达式          | 含义                           |
 |-----------------+--------------------------------|
 | name=str        | job name，默认同组名           |
@@ -54,7 +56,8 @@ fio [options] [jobfile]...
 | direct=bool     | 打开O_DIRECT，默认未打开       |
 | offset=int      | 文件中的偏移位置               |
 | thread          | 用pthread_create(3)替代fork(2) |
-*** 引擎参数
+
+引擎参数：
 | ioengine=str | 含义                          |
 |--------------+-------------------------------|
 | sync         | read(2), write(2), fseek(2)   |
@@ -66,14 +69,16 @@ fio [options] [jobfile]...
 | splice       | splice(2), vmsplice(2)        |
 | sg           | SCSI generic sg v3 I/O        |
 | net          | Transfer over the network     |
-*** 验证参数
+
+验证参数：
 | verify=str        | 含义                                   |
 |-------------------+----------------------------------------|
 |                   | md5 crc16 crc32 crc32c crc32c-intel    |
 |                   | crc64 crc7 sha256 sha512 sha1          |
 | verify_fatal=bool | 当发现验证错误时立即退出，默认不会退出 |
 | verify_dump=bool  | 验证出错的时候打印数据                 |
-*** 控制job数量的参数
+
+控制job数量的参数：
 | job数目       | 含义                   |
 |---------------+------------------------|
 | iodepth=int   | 对同一文件操作的进程数 |
@@ -81,7 +86,8 @@ fio [options] [jobfile]...
 | nrfiles=int   | 总共产生的文件数目     |
 | openfiles=int | 保持打开的文件数目     |
 | loops=int     | 当前job的迭代次数      |
-*** 控制IO数量的参数
+
+控制IO数量的参数：
 | IO数目                  | 含义               |
 |-------------------------+--------------------|
 | size=int                | 总数据大小         |
@@ -90,7 +96,7 @@ fio [options] [jobfile]...
 | bsrange=irange[,irange] | 块范围             |
 | ba=int[,int]            | 块对齐大小         |
 
-*** 样本文件
+样本文件：
 #+BEGIN_SRC sh
 [global]
 ioengine=sync
@@ -117,7 +123,7 @@ numjobs=2
 numjobs=2
 #+END_SRC
 
-** 报告格式
+*** 报告格式
 运行期间的格式如下
 #+BEGIN_SRC text
 Threads: 1: [_r] [24.8% done] [ 13509/  8334 kb/s] [eta 00h:01m:31s]
