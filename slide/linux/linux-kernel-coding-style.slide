@@ -542,6 +542,9 @@ make CHECK="smatch -p=kernel" C=2 M=drivers/mmc | tee warns.txt
 #+END_SRC
 
 *** emacs flycheck
+- https://github.com/flycheck/flycheck
+- 支持30多种语言，包括70多种语法检查工具
+- 全自动，后台检查，高度可配置
 #+BEGIN_CENTER
 #+ATTR_LATEX: :float t :placement [H] :width 8cm
 file:fig/coding-style/flycheck.png
