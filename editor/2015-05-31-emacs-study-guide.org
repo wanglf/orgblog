@@ -48,6 +48,11 @@ brew install emacs --with-cocoa
 | ecb           | 窗口管理/导航     |
 | xterm         | 使用终端          |
 | ido           | 命令补全          |
+* 实用技巧
+** 编辑技巧
+- describe-coding-system :: 查看当前编码状态
+- revert-buffer-with-coding-system :: 更换编码以解析文件
+- set-buffer-file-coding-system :: 设置编码，会修改文件
 
 * 参考资料
 ** 博客资源
