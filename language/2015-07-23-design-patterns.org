@@ -4,7 +4,7 @@
 #+LATEX_CLASS: latex-doc
 #+PAGE_TAGS: design-pattern
 
-* 简介
+* 设计模式
 ** 创建模式
 
 *** 抽象工厂模式 Abstract Factory(Business Pattern)
@@ -16,7 +16,6 @@
 抽象工厂提供创建一系列相关对象的接口。
 所谓抽象就是把一类对象抽象为一组，用一个工厂就能产生这一组中的对象。
 #+HTML: <!--abstract-end-->
-
 
 *** 工厂方法 Factory Method
 工厂模式用一个工厂来产生基本对象，产生的过程其实是需要判断的，
@@ -43,7 +42,6 @@ toy b = fb.create_toy();
 建造者模式针对过程是固定的，但是外观不同，
 需要什么样的外观，只需要调整参数，而不需要修改建造流程，
 也叫生成器模式。
-
 
 ** 结构模式
 
@@ -174,6 +172,56 @@ toy b = fb.create_toy();
 如果两个类不彼此直接通信，那么就不要直接相互作用，
 如果一个类需要调用另一个类的某个方法的话，可以通过第三者转发。
 和依赖倒转很相似。
+
+* UML类图
+** 基本关系
+泛化关系（继承关系和实现关系）：表示is a关系，即继承或实现。
+具体的说包括类与类的继承，接口与接口的继承，类对接口的实现（也叫实现关系）。
+用空心箭头表示，箭头指向被继承类。如果是继承用实线，如果是实现则要用虚线。
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/design-pattern/uml-generalization.png
+#+END_CENTER
+
+依赖关系：表示use a关系，一个类使用另一个类，这种关系具有偶然性，
+临时性，是非常弱的一种关系。
+如A是B的局部变量或成员函数的参数。
+用大于箭头表示，箭头指向被使用类。并且注意是用虚线连接。
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/design-pattern/uml-dependency.jpg
+#+END_CENTER
+
+关联关系：是reference a关系，这是一种双方平等、稳定的长期的关系。
+可以是单向也可以是双向引用。
+用大于箭头表示，箭头指向被引用类，实线连接。
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/design-pattern/uml-association.jpg
+#+END_CENTER
+
+聚合关系：是has a关系，是整体和部分的关系。但是这个整体和部分是可以分离的。
+聚合比关联关系更强，所以在箭头发出端多了一个空菱形。
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/design-pattern/uml-aggregation.jpg
+#+END_CENTER
+
+组合关系：是contains a关系，整体和部分是不可分离的。
+组合关系比聚合关系更强，所以将空菱形变为实心菱形。
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/design-pattern/uml-composition.jpg
+#+END_CENTER
+
+多重关系：通常在关联、聚合、组合中使用，代表有多少个关联对象存在。
+使用数字..星号（数字）表示。
+
+下图表达一个比较复杂的UML示例：
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/design-pattern/uml-example.jpg
+#+END_CENTER
 
 * 参考资料
 - [[http://coolshell.cn/articles/8961.html][从面向对象的设计模式看软件设计]]
