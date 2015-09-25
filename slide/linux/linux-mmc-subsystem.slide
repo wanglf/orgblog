@@ -23,9 +23,9 @@ file:fig/mmc-subsys/mmc-driver-frame.png
 
 *** 分层结构
 #+BEGIN_SRC makefile
-  obj-$(CONFIG_MMC)               += core/
-  obj-$(CONFIG_MMC)               += card/
-  obj-$(subst m,y,$(CONFIG_MMC))  += host/
+obj-$(CONFIG_MMC)               += core/
+obj-$(CONFIG_MMC)               += card/
+obj-$(subst m,y,$(CONFIG_MMC))  += host/
 #+END_SRC
 
 - core :: 核心层完成协议部分功能
@@ -34,11 +34,11 @@ file:fig/mmc-subsys/mmc-driver-frame.png
 
 *** 核心层
 #+BEGIN_SRC makefile
-  obj-$(CONFIG_MMC)       += mmc_core.o
-  mmc_core-y := core.o bus.o host.o mmc.o mmc_ops.o sd.o  \
-             sd_ops.o sdio.o sdio_ops.o sdio_bus.o        \
-             sdio_cis.o sdio_io.o sdio_irq.o quirks.o     \
-             slot-gpio.o
+obj-$(CONFIG_MMC)       += mmc_core.o
+mmc_core-y := core.o bus.o host.o mmc.o mmc_ops.o sd.o  \
+           sd_ops.o sdio.o sdio_ops.o sdio_bus.o        \
+           sdio_cis.o sdio_io.o sdio_irq.o quirks.o     \
+           slot-gpio.o
 #+END_SRC
 - mmc_core :: 最终生成mmc_core.ko模块
 - core.c :: 传输中间件，上传下达
@@ -47,11 +47,11 @@ file:fig/mmc-subsys/mmc-driver-frame.png
 
 *** 卡层
 #+BEGIN_SRC makefile
-  obj-$(CONFIG_MMC_BLOCK)         += mmc_block.o
-  mmc_block-objs                  := block.o queue.o
-  obj-$(CONFIG_MMC_TEST)          += mmc_test.o
+obj-$(CONFIG_MMC_BLOCK)         += mmc_block.o
+mmc_block-objs                  := block.o queue.o
+obj-$(CONFIG_MMC_TEST)          += mmc_test.o
 
-  obj-$(CONFIG_SDIO_UART)         += sdio_uart.o
+obj-$(CONFIG_SDIO_UART)         += sdio_uart.o
 #+END_SRC
 - mmc_block :: 最终生成mmc_block.ko模块
 - block.c :: 块设备驱动
@@ -59,9 +59,9 @@ file:fig/mmc-subsys/mmc-driver-frame.png
 
 *** 主机层
 #+BEGIN_SRC makefile
-  obj-$(CONFIG_MMC_SDHCI)         += sdhci.o
-  obj-$(CONFIG_MMC_SDHCI_PCI)     += sdhci-pci.o
-  ...
+obj-$(CONFIG_MMC_SDHCI)         += sdhci.o
+obj-$(CONFIG_MMC_SDHCI_PCI)     += sdhci-pci.o
+...
 #+END_SRC
 - sdhci.c :: SDHCI(SD Host Controller Interface)
 
@@ -138,11 +138,13 @@ file:fig/mmc-subsys/sdio-init.png
 :PROPERTIES:
 :BEAMER_col: 0.7
 :END:
-- OCR :: CMD5会发送两次，一次获取，一次设置
+- OCR :: Operation Conditions Register，
+     CMD5会发送两次，一次获取，一次设置
 - 18V :: 如果支持低电压就会切电压，即CMD11
+- RCA :: Relative Card Address，CMD3
 - SELECT :: 选中，即CMD7
-- CCCR :: Card Common Control Registers
-- CIS :: Card Information Structure
+- CCCR :: Card Common Control Registers，CMD52
+- CIS :: Card Information Structure，CMD52
 
 *** SD初始化
 
@@ -157,20 +159,21 @@ file:fig/mmc-subsys/sd-init.png
 :PROPERTIES:
 :BEAMER_col: 0.7
 :END:
+- OCR :: Operation Conditions Register，ACMD41
 - CID :: Card IDentification，CMD2
 - CSD :: Card Specification Data，CMD9
 - DSR :: Driver Stage Register，CMD4
 - SCR :: SD Configuration Register，ACMD51
 - SSR :: SD Status Register，ACMD13
 - SWITCH :: switch function，CMD6
-- TUNING :: CMD19
+- TUNING :: 搜索最佳相位，CMD19
 
 *** MMC设备
 - 代表MMC设备的数据结构是mmc_card
 - 由mmc_alloc_card分配并初始化
   - 设备属性组位于：/sys/bus/mmc/devices/mmc0:b368/
-  - 如SD卡设备属性为：sd_type。
-    包括：cid、csd、scr、date、erase_size、preferred_erase_size、
+  - 如SD卡设备属性为：sd_type
+  - 包括：cid、csd、scr、date、erase_size、preferred_erase_size、
     fwrev、hwrev、manfid、name、oemid、serial等。
 - 卡设备由mmc_add_card添加
   - 当SD/MMC/SDIO卡初始化成功时调用
@@ -197,7 +200,7 @@ file:fig/mmc-subsys/mmc-blk-probe.png
 
 *** mmc_queue_thread
 - blk_fetch_request 从通用块层的提取请求
-- 通过 =issue_fn= 处理请求
+- 通过 =issue_fn= 处理请求，即 =mmc_blk_issue_rq=
 - 这个线程不会一直跑，没有请求就会进入休眠
   - mmc_request_fn 到来时会唤醒线程
 
@@ -306,17 +309,17 @@ file:fig/mmc-subsys/mmc-arbit-data.png
 
 *** 处理DMA传输
 - 根据散列表构建DMA描述表
-- 将描述表地址写入主机寄存器，启动DMA传输，进入休眠等待
+- 将描述表地址写入主机寄存器
+- 启动DMA传输，进入休眠等待
 - 等待DMA传输完毕触发中断
 - 中断处理器接收中断，唤醒等待
 - 传输完毕退出请求处理函数，通知核心层
 
 * 参考资料
 ** 参考资料
-*** 书籍演示
+*** 参考资料
 - [[http://free-electrons.com/doc/block_drivers.pdf][Block device drivers]]
-
-*** 网络博客
 - [[http://www.cnblogs.com/cslunatic/p/3678045.html][Linux SD/MMC/SDIO驱动分析]]
+- [[http://download.farsight.com.cn/download/pdf/Farsight091121linux-3.pdf][Linux MMC/SD卡驱动开发]]
 - [[http://blog.chinaunix.net/uid-22174347-id-1786945.html][嵌入式Linux之我行——S3C2440上MMC/SD卡驱动实例开发讲解(一)]]
 - [[http://blog.chinaunix.net/uid-22174347-id-1786946.html][嵌入式Linux之我行——S3C2440上MMC/SD卡驱动实例开发讲解(二)]]
