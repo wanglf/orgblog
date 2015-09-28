@@ -53,7 +53,8 @@ brew install emacs --with-cocoa
 - describe-coding-system :: 查看当前编码状态
 - revert-buffer-with-coding-system :: 更换编码以解析文件
 - set-buffer-file-coding-system :: 设置编码，会修改文件
-
+- align-regexp :: 按照指定表达式对齐，用于代码排版
+- hexl-mode :: 用于查看二进制文件
 * 参考资料
 ** 博客资源
 - [[http://blog.csdn.net/redguardtoo/article/details/7222501/][一年成为Emacs高手(像神一样使用编辑器)]]
