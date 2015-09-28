@@ -13,7 +13,7 @@
 - *[[http://c.biancheng.net/cpp/][C语言中文网]]* | *[[https://chenxiaowei.gitbooks.io/cpp_concurrency_in_action/content/index.html][C++并发编程]]* | *[[http://zh.highscore.de/cpp/boost/][Boost C++库]]*
 - *[[http://www.diveintopython3.net/][Dive Into Python3]]* | *[[https://docs.python.org/3/][Python3文档]]* | *[[https://docs.python.org/2/][Python2文档]]*
 - *[[http://docs.oracle.com/javase/6/docs/][Java SE 6文档]]*
-- *[[https://siddontang.gitbooks.io/leetcode-solution/content/][leetcode题解]]*
+- *[[http://www.jiuzhang.com/][九章算法]]* | *[[https://siddontang.gitbooks.io/leetcode-solution/content/][leetcode题解]]*
 - *[[https://git-scm.com/book/en/v2][Pro Git]]* | *[[https://git-scm.com/book/zh/v1][中文版]]*
 - *[[http://free-electrons.com/][Free Electrons]]* | *[[http://linuxtools-rst.readthedocs.org/zh_CN/latest/index.html][Linux工具快速教程]]*
 - *[[http://yeasy.gitbooks.io/docker_practice/content/][Docker从入门到实践]]*

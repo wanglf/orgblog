@@ -6,7 +6,6 @@
 
 * C语言习题
 ** 关键字解释
-#+HTML: <!--abstract-begin-->
 1. 最常用的表示类型的关键字，如下表：
    | char | short  | int      | long | float | double |
    | void | signed | unsigned | enum | union | struct |
@@ -29,8 +28,6 @@
 
    操作关键字：
    | typedef | sizeof |
-
-#+HTML: <!--abstract-end-->
 
 2. 在C原文件中经常有这样的代码：
    #+BEGIN_SRC cpp
