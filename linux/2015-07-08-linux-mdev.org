@@ -406,7 +406,6 @@ struct globals {
 - MAX_SYSFS_DEPTH :: 最大支持扫描深度为3层，比方 =/sys/block/sda/sda1= 就已经到极限了，
      再往下就不支持了。
 
-
 ** 基本操作
 #+BEGIN_SRC cpp
 static void make_default_cur_rule(void)
