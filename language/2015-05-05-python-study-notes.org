@@ -416,6 +416,11 @@ b = B()
 就不应该给用户提供接口。
 
 * 常用模块
+** 基本模块
+- 时间和日期模块
+  - [[http://www.wklken.me/posts/2015/03/03/python-base-datetime.html][PYTHON-基础-时间日期处理小结]]
+  - [[https://docs.python.org/2/library/datetime.html][8.1. datetime — Basic date and time types]]
+
 ** subprocess
 subprocess模块位于Python标准库的[[https://docs.python.org/2/library/ipc.html][Interprocess Communication and Networking]]部分，
 subprocess模块非常强大，可以创建新的进程，连接到其他管道，获取返回值等，
