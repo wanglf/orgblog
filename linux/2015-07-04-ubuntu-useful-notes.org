@@ -68,6 +68,22 @@ sudo apt-get install fcitx-sogoupinyin
 sudo apt-get install nautilus-open-terminal
 #+END_SRC
 
+*** 安装chrome flash插件
+Chromium谷歌的开源浏览器将不再支持Netscape浏览器插件API，Adobe公司的Flash将无法
+正常工作了。然而用户可以使用Pepper Flash Player，这是谷歌浏览器上一款替代Adobe
+Flash的插件。
+#+BEGIN_SRC sh
+sudo apt-get install chromium-browser pepperflashplugin-nonfree
+sudo update-pepperflashplugin-nonfree --install
+#+END_SRC
+如果是ubuntu早期版本，需添加源：
+#+BEGIN_SRC sh
+sudo add-apt-repository ppa:skunk/pepper-flash
+sudo apt-get update
+sudo apt-get install pepflashplugin-installer
+sudo update-pepperflashplugin-nonfree --install
+#+END_SRC
+
 *** 安装jekyll
 ref:
 - http://blog.csdn.net/cschengvdn/article/details/42425271

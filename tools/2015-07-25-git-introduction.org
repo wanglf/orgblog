@@ -84,6 +84,7 @@ git stash pop                           # 弹出暂存区
 #+BEGIN_SRC sh
 git clean -ndx                          # 显示要删除的文件列表
 git clean -fdx                          # 删除仓库外的文件
+git gc                                  # 优化本地仓库
 #+END_SRC
 
 *** 选取
