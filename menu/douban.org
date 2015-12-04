@@ -1,0 +1,23 @@
+#+TITLE: 豆瓣
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_LAYOUT: body
+
+* 读过
+
+#+BEGIN_HTML
+<div><script type="text/javascript" src="http://www.douban.com/service/badge/wanglifeng88/?selection=latest&amp;picsize=small&amp;hideself=on&amp;show=collection&amp;n=100&amp;hidelogo=on&amp;cat=drama%7Cmovie%7Cbook%7Cmusic&amp;columns=5"></script></div>
+#+END_HTML
+
+* 在读
+
+#+BEGIN_HTML
+<div><script type="text/javascript" src="http://www.douban.com/service/badge/wanglifeng88/?selection=latest&amp;picsize=small&amp;hideself=on&amp;show=dolist&amp;n=100&amp;hidelogo=on&amp;cat=drama%7Cmovie%7Cbook%7Cmusic&amp;columns=5"></script></div>
+#+END_HTML
+
+* 想读
+
+#+BEGIN_HTML
+<div><script type="text/javascript" src="http://www.douban.com/service/badge/wanglifeng88/?selection=latest&amp;picsize=small&amp;hideself=on&amp;show=wishlist&amp;n=100&amp;hidelogo=on&amp;cat=drama%7Cmovie%7Cbook%7Cmusic&amp;columns=5"></script></div>
+#+END_HTML

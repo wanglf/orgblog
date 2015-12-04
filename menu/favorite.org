@@ -5,26 +5,52 @@
 #+PAGE_LAYOUT: body
 
 * 网站导航
-** 计算机学习资源
-- *[[http://www.kejik.com/][科技控]]* | *[[http://www.gogeeks.cn/][极客导航]]* | *[[http://www.vaikan.com/][外刊IT评论]]* | *[[http://www.csdn.net/][CSDN]]*
-- *[[https://www.wikipedia.org/][维基百科]]* | *[[http://www.maiziedu.com/][麦子学院]]* | *[[http://www.ibm.com/developerworks/cn/topics/][IBM developerWorks]]* | *[[http://stackoverflow.com/][Stack Overflow]]* | *[[http://stackexchange.com/][Stack Exchange]]*
+** 官方网址
+
+- *[[https://www.centos.org/][CentOS]]* | *[[http://www.ubuntu.com/][Ubuntu]]*
+- *[[http://www.gluster.org/][GlusterFS]]* | *[[http://ceph.com/][Ceph]]*
+- *[[https://www.docker.com/][docker.com]]* | *[[http://www.linux-kvm.org/page/Main_Page][Linux-KVM]]* | *[[https://www.openstack.org/][openstack.org]]*
+- *[[http://www.linuxvirtualserver.org/][LVS]]* | *[[http://www.haproxy.org/][HAProxy]]* | *[[http://www.keepalived.org/][Keepalived]]*
+- *[[http://nginx.org/][nginx]]* | *[[http://tomcat.apache.org/][tomcat]]*
+- *[[https://www.varnish-cache.org/][varnish]]*
+- *[[https://www.rabbitmq.com/][RabbitMQ]]* | *[[http://activemq.apache.org/][ActiveMQ]]*
+- *[[https://zookeeper.apache.org/][Zookeeper]]*
+- *[[https://www.elastic.co/][Elastic]]* | *[[http://spark.apache.org/][Spark]]* | *[[https://hadoop.apache.org/][Hadoop]]*
+- *[[https://www.mysql.com/][Mysql]]* | *[[https://mariadb.org/][MariaDB]]* | *[[http://redis.io/][Redis]]* | *[[https://www.mongodb.org/][MongoDB]]*
+- *[[http://www.cacti.net/][cacti]]* | *[[https://www.nagios.org/][nagios]]* | *[[http://www.zabbix.com/][zabbix]]*
+- *[[https://jquery.com/][Jquery]]* | *[[http://getbootstrap.com/][BootStrap]]* | *[[https://angularjs.org/][AngularJS]]* | *[[https://facebook.github.io/react/][React]]* | *[[http://d3js.org/][d3js]]*
+- *[[http://docs.oracle.com/javase/7/docs/][Java SE 7 Doc]]* | *[[https://spring.io/][Spring]]* | *[[http://hibernate.org/][Hibernate]]*
+- *[[https://www.perl.org/][Perl]]*
+- *[[https://www.python.org/][Python]]*
 - *[[https://github.com/][GitHub]]* | *[[http://sourceforge.net/][SourceForge]]* | *[[https://code.google.com/][Google Code]]*
-- *[[http://c-faq.com/index.html][C FAQ]]*
-- *[[http://docs.oracle.com/javase/7/docs/][Java SE 7文档]]*
-- *[[http://www.diveintopython3.net/][Dive Into Python3]]* | *[[https://docs.python.org/3/][Python3文档]]* | *[[https://docs.python.org/2/][Python2文档]]*
-- *[[http://www.math.zju.edu.cn/ligangliu/latexforum/tex_doc.htm][Tex]]* | *[[http://orgmode.org/][orgmode]]*
-- *[[http://www.jiuzhang.com/][九章算法]]* | *[[https://siddontang.gitbooks.io/leetcode-solution/content/][leetcode题解]]*
-- *[[https://git-scm.com/book/en/v2][Pro Git]]* | *[[https://git-scm.com/book/zh/v1][中文版]]*
+- *[[http://www.vim.org/][Vim]]* | *[[https://www.gnu.org/software/emacs/][Emacs]]* | *[[http://www.sublimetext.com/][Sublime Text]]*
+- *[[https://news.ycombinator.com/][Hacker News]]* | *R[[https://www.reddit.com/][eddit]]* | *[[http://news.dbanotes.net/][Startup News]]*
+- *[[http://www.csdn.net/][CSDN]]* | *[[http://www.chinaunix.net/][ChinaUnix]]* | *[[http://www.51cto.com/][51cto]]*
+- *[[https://www.wikipedia.org/][Wikipedia]]* | *[[http://www.ibm.com/developerworks/cn/topics/][IBM developerWorks]]*
+- *[[http://stackoverflow.com/][Stack Overflow]]* | *[[http://stackexchange.com/][Stack Exchange]]* | *[[https://www.quora.com/][Quora]]* | *[[https://www.zhihu.com/][Zhihu]]*
+- *[[https://youtube.com][Youtube]]*
+
+** 计算机学习资源
+
 - *[[http://yeasy.gitbooks.io/docker_practice/content/][Docker从入门到实践]]*
+- *[[http://c-faq.com/index.html][C FAQ]]*
+- *[[http://www.diveintopython3.net/][Dive Into Python3]]* | *[[https://docs.python.org/3/][Python3文档]]* | *[[https://docs.python.org/2/][Python2文档]]*
+- *[[http://www.math.zju.edu.cn/ligangliu/latexforum/tex_doc.htm][ZJU Tex]]* | *[[http://orgmode.org/][orgmode]]*
+- *[[https://git-scm.com/book/en/v2][Pro Git]]* | *[[https://git-scm.com/book/zh/v1][中文版]]*
+- *[[https://siddontang.gitbooks.io/leetcode-solution/content/][leetcode题解]]*
+- *[[http://acl.readthedocs.org/en/latest/][Ansi Common Lisp]]*
 
 ** Blog
+
 |--------+------------+---------------------+------------------|
 | [[http://coolshell.cn/][酷壳]]   | [[http://haiyangxu.github.io/][Haiyang Xu]] | [[http://edsionte.com/techblog/][edsionte's TechBlog]] | [[http://www.liaoxuefeng.com/][廖雪峰]]           |
+| [[http://ruanyifeng.com][阮一峰]] | [[http://icodeit.org][icodeit]]    | [[http://blog.zhaojie.me/][老赵点滴]]            | [[http://blog.codingnow.com/%0A%0A%0A][云风]]             |
 | [[http://colobu.com/][鸟窝]]   | [[http://www.yinwang.org/][王垠]]       | [[http://www.gocalf.com/blog/][GoCalf Blog]]         | [[http://www.52nlp.cn/][我爱自然语言处理]] |
 | [[http://www.yangzhiping.com/][阳志平]] | [[http://blog.csdn.net/lisonglisonglisong][神奕的专栏]] | [[http://mingxinglai.com/cn/][赖明星]]              | [[https://github.com/julycoding/The-Art-Of-Programming-By-July][编程之法]]         |
 |--------+------------+---------------------+------------------|
 
-** Manual
 
-** 待分类
-- [[http://www.tianya.cn/m/][天涯论坛]]
+** 社交
+
+- *[[https://www.facebook.com/][Facebook]]* | *[[https://twitter.com/][Twitter]]* | *[[https://www.pinterest.com/][Pinterest]]* | *[[https://www.linkedin.com/][Linkedin]]*
+- *[[http://www.douban.com/][豆瓣]]* | *[[http://www.weibo.com/][新浪微博]]*
