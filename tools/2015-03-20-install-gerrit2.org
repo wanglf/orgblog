@@ -1,0 +1,129 @@
+#+TITLE:  "Code Review工具Gerrit2安装方法"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: git
+#+PAGE_CATETORIES: tools
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+代码审查是开发流程的重要一环，gerrit2是google开源用于代码审查的工具，其采用Java实现。本文讲述如何安装gerrit2，并示范如何开始第一个工程。
+#+HTML: <!--abstract-end-->
+
+* 环境准备
+
+1. 准备gerrit.war, 此处为Centos 6.5 64bit环境下v2.10-rc2版本安装
+2. java 1.7.0以上版本，并设置好CLASSPATH
+3. 准备mysql-connector-java-5.1.21-bin.jar
+4. 提前安装git
+
+* 数据库准备
+
+** mysql-server安装
+** 数据库设置
+
+#+BEGIN_EXAMPLE
+CREATE USER 'gerrit2'@'hostip' IDENTIFIED BY 'secret';
+CREATE DATABASE reviewdb;
+GRANT ALL ON reviewdb.* TO 'gerrit2'@'hostip';
+FLUSH PRIVILEGES;
+#+END_EXAMPLE
+
+* gerrit2初始化
+
+#+BEGIN_SRC sh
+adduser gerrit2
+mkdir -p /opt/gerrit2
+chown -R gerrit2.gerrit2 /opt/gerrit2
+su - gerrit2
+java -jar gerrit.war init -d /opt/gerrit2
+#+END_SRC
+
+* gerrit2 启动
+
+#+BEGIN_SRC sh
+cd /opt/gerrit2/bin
+./gerrit.sh start
+#+END_SRC
+
+* nginx设置
+
+#+BEGIN_SRC sh
+git config --file /opt/gerrit2/etc/gerrit.config auth.type HTTP
+git config --file /opt/gerrit2/etc/gerrit.config --unset auth.httpHeader
+git config --file /opt/gerrit2/etc/gerrit.config auth.emailFormat '{0}@citicbank.com'
+
+git config --global user.name "wanglf"
+git config --global user.email "wanglifeng_hz@citicbank.com"
+#+END_SRC
+
+=htpasswd生成web服务器认证密码文件， 并修改nginx配置如下=
+
+#+BEGIN_EXAMPLE
+location /gerrit2/ {
+      auth_basic "Restricted";
+      auth_basic_user_file /etc/nginx/username.password;
+      proxy_pass http://gerrit2cluster;
+      proxy_set_header    Host    $host;
+      proxy_set_header    X-Real-IP   $remote_addr;
+      proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+}
+#+END_EXAMPLE
+
+* ssh 配置
+
+#+BEGIN_EXAMPLE
+ssh-keygen -t rsa
+#+END_EXAMPLE
+
+=拷贝 id_rsa.pub至web界面的ssh公钥。 vi ~/.ssh/config, 增加如下内容:=
+
+#+BEGIN_EXAMPLE
+Host gerrit2
+Hostname gerrit2
+User admin
+Port 29418
+IdentityFile ~/.ssh/id_rsa
+#+END_EXAMPLE
+
+=测试=
+
+#+BEGIN_EXAMPLE
+ssh gerrit2
+#+END_EXAMPLE
+
+* 第一个project的workflow
+
+** new project
+
+方式一: 通过web界面或gerrit命令行新建project
+
+** git clone
+
+方式二: clone现有的project
+
+#+BEGIN_SRC sh
+mkdir -p /opt/git/
+chown -R gerrit2.gerrit2 /opt/git/
+su - gerrit2
+cd /opt/git/
+git clone ssh://admin@hostip:29418/test
+#+END_SRC
+
+** git push
+
+日常git操作，commit之后，利用如下命令推送至changes
+
+#+BEGIN_SRC sh
+git add readme.MD
+git commit -m "initial commit"
+git push origin HEAD:refs/for/master
+#+END_SRC
+
+** review
+
+gerrit web上进行review
+
+** accept
+
+gerrit web上进行accept，正式进入master目录

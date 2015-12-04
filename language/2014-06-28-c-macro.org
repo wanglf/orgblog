@@ -1,0 +1,39 @@
+#+TITLE:  "C语言编译预处理"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: c
+#+PAGE_CATETORIES: language
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+编译预处理执行宏替换、条件编译以及包含指定文件。
+#+HTML: <!--abstract-end-->
+
+
+* 两种include方式
+
+尖括号一般先查找系统自身的库，再查找当前目录;双引号反之。
+
+* ##与#的使用
+
+两者一般用于字符串连接，如下为示例：
+
+
+#+BEGIN_SRC c
+#define tempfile(dir) #dir "/%s" 
+/* tempfile(/usr/temp) return "/usr/tmp" "/%s" */
+
+#define cat(x, y) x ## y 
+/* cat(var, 123) return var123 */
+
+cat(1, 2)3 
+/* invalid */
+
+#define xcat(x, y) cat(x, y) 
+xcat(xcat(1, 2), 3) 
+#+END_SRC
+
+* 参考资料
+
+1. The C Programming language(2nd edition) by K&R Appendix A.12.3

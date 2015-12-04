@@ -1,0 +1,95 @@
+#+TITLE:  Vim学习笔记之移动光标
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: vim
+#+PAGE_CATETORIES: editor
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+本文总结vim中移动光标常用技巧。
+#+HTML: <!--abstract-end-->
+
+* 基本的移动指令
+
+** jkhl
+
+基本的前后左右移动
+
+** w
+
+往前移一个单词
+
+** e
+
+移到本单词末尾
+
+** ^$
+
+行首或行尾, ^不包含空格符, 但$包含
+
+** +, -
+
+往前或往回移一行，第一个非空格符位置
+
+** 0
+
+0移到行首，包含空格
+
+* g?
+
+** g*, g#
+
+移动至光标所在单词下一个或前一个出现位置
+
+** g0, g_
+
+移动光标至screen line的第一个或最后一个非空格符位置
+
+** gj, gk
+
+移到screen lie中的前一行或后一行
+
+* CTRL-?
+
+** CTRL-F, CTRL-B
+
+往前或往回翻一页
+
+** CTRL-E, CTRL-Y
+
+往前或往回移一行, 支持count
+
+** CTRL-D, CTRL-U
+
+往前或往回翻半屏
+
+* z?
+
+** z+, z^
+
+往前或往回翻一页，到该行行首第一个非空字符
+
+** z., zz
+
+到窗口中央，前者到行首，后者到相同列所在位置
+
+* Various motions
+
+** HML
+
+走到屏幕的顶部，中间或者底部。
+
+** %
+
+走到相匹配的括号。
+
+** [({
+
+句、段落、节。
+
+* Pipe STDOUT to vim
+
+#+BEGIN_SRC sh
+git diff | vim -
+#+END_SRC

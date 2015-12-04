@@ -19,3 +19,11 @@
   - 按键 =f= 用于折叠或展开文档全文
   - 鼠标点击章节标题即可折叠或展开当前章节
 
+
+** 日志
+
+- 2015-11-17: 参照[[http://yemic.com/][mickyching]], 修改主题,完全使用emacs org-mode编写文章, 并采用[[https://github.com/wanglf/utils/tree/master/puborg][puborg]]工具发布。
+- 2015-10-19: 第一次尝试用emacs org-mode代替markdown来编写博文。
+- 2015-07-11: 参照[[https://github.com/flyaway1217/flyaway1217.github.com][flyaway]]基于bootstrap的模板，修改博客主题, 并增加disqus评论功能。
+- 2014-04-15: 增加豆瓣收藏秀。
+- 2014-04-01: 建立Jekyll站点, clone自[[https://github.com/pizn/pizn.github.com][pizn]]。

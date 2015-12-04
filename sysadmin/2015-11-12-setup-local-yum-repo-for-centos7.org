@@ -1,0 +1,156 @@
+#+TITLE: Setup yum repository for centos 7
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: yum
+#+PAGE_CATETORIES: sa
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+搭建本地yum repository，重要意义如下:
+
+- 如企业内部服务器没有互联网连接，则可以通过本地repo服务器安装软件包，无需代理
+- 服务器通过yum安装软件包的速度将大大提高，这是因为下载方式将由互联网变更为局域网
+
+#+HTML: <!--abstract-end-->
+
+
+* 服务器端设置
+** rsync脚本
+#+BEGIN_SRC sh
+#!/bin/bash
+#script name:rsync_yumrepo.sh
+
+RsyncBin="/usr/bin/rsync"
+RsyncPerm='-avrt --delete --no-iconv --bwlimit=800'
+Centos_7_base='/var/www/html/repos/centos/base/'
+Centos_7_extras='/var/www/html/repos/centos/extras/'
+Centos_7_updates='/var/www/html/repos/centos/updates/'
+Centos_7_epel='/var/www/html/repos/centos/epel/'
+Centos_7_mariadb='/var/www/html/repos/mariadb/10/0/'
+
+LogFile='/var/log/rsyncyumrepo'
+Date=`date +%Y-%m-%d`
+
+#check function
+
+function check {
+if [ $? -eq 0 ];then
+echo -e "33[1;32mRsync is success!33[0m" >>$LogFile/$Date.log
+else
+echo -e "33[1;31mRsync is fail!33[0m" >>$LogFile/$Date.log
+fi
+
+if [ ! -d "$Centos_7_base" ];then
+mkdir -pv $Centos_7_base
+fi
+
+if [ ! -d "$Centos_7_extras" ];then
+mkdir -pv $Centos_7_extras
+fi
+
+if [ ! -d "$Centos_7_updates" ];then
+mkdir -pv $Centos_7_updates
+fi
+
+if [ ! -d "$Centos_7_epel" ];then
+mkdir -pv $Centos_7_epel
+fi
+
+if [ ! -d "$Centos_7_mariadb" ];then
+mkdir -pv $Centos_7_mariadb
+fi
+
+if [ ! -d "$LogFile" ];then
+mkdir -pv $LogFile
+fi
+
+#rsync centos 7 base
+echo 'Now start to rsync centos 7 base!' >>$LogFile/$Date.log
+$RsyncBin $RsyncPerm rsync://mirrors.yun-idc.com/centos/7/os/ $Centos_7_base >>$LogFile/$Date.log
+check
+
+#rsync centos 7 extras
+echo 'Now start to rsync centos 7 extras!' >>$LogFile/$Date.log
+$RsyncBin $RsyncPerm rsync://mirrors.yun-idc.com/centos/7/extras/ $Centos_7_extras >>$LogFile/$Date.log
+check
+
+#rsync centos 7 updates
+echo 'Now start to rsync centos 7 updates!' >>$LogFile/$Date.log
+$RsyncBin $RsyncPerm rsync://mirrors.yun-idc.com/centos/7/updates/ $Centos_7_updates >>$LogFile/$Date.log
+check
+
+#rsync centos 7 epel
+echo 'Now start to rsync centos 7 epel!' >>$LogFile/$Date.log
+$RsyncBin $RsyncPerm --exclude=SRPMS/ --exclude=ppc64/ rsync://mirrors.yun-idc.com/epel/7/ $Centos_7_epel >>$LogFile/$Date.log
+check
+
+#rsync centos 7 mariadb
+echo 'Now start to rsync centos 7 mariadb!' >>$LogFile/$Date.log
+$RsyncBin  -vai4CH --safe-links --delay-updates --delete rsync://rsync.osuosl.org/mariadb/mariadb-10.0.22/yum/centos7-amd64/ $Centos_7_mariadb >>$LogFile/$Date.log
+check
+#+END_SRC
+
+** 查看磁盘空间
+#+BEGIN_SRC sh
+du -sch /var/www/html/repos/
+#+END_SRC
+
+** nginx配置
+
+#+BEGIN_EXAMPLE
+location /repos {
+  root   /var/www/html;
+  autoindex on;
+}
+#+END_EXAMPLE
+
+open browser, try http://hostname/repos
+
+** 定期同步
+#+BEGIN_EXAMPLE
+30 02 * * * /bin/sh /root/sh/rsyncyumrepo.sh > /dev/null 2>&1
+#+END_EXAMPLE
+
+* 客户端设置
+
+#+BEGIN_SRC sh
+rm -rf /etc/yum.repos.d/*.repo
+vi /etc/yum.repos.d/CentOS-Base.repo
+#+END_SRC
+
+repo文件内容如下:
+
+#+BEGIN_EXAMPLE
+# filename: CentOS-Base.repo
+#
+[base]
+name=CentOS-$releasever - Base
+baseurl=http://reposrv/repos/centos/base/$basearch
+gpgcheck=0
+
+
+#released updates
+[updates]
+name=CentOS-$releasever - Updates
+baseurl=http://reposrv/repos/centos/updates/$basearch
+gpgcheck=0
+
+#additional packages that may be useful
+[extras]
+name=CentOS-$releasever - Extras
+baseurl=http://reposrv/repos/centos/extras/$basearch
+gpgcheck=0
+
+#additional packages From Epel Release
+[epel]
+name=CentOS-$releasever - Epel Release
+baseurl=http://reposrv/repos/centos/epel/$basearch
+gpgcheck=0
+
+#Officail mariadb repo
+[mariadb]
+name=CentOS-$releasever - MariaDB
+baseurl=http://reposrv/repos/mariadb/10/0/
+gpgcheck=0
+#+END_EXAMPLE

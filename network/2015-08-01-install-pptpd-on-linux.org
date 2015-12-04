@@ -1,0 +1,62 @@
+#+TITLE:  "CentOS 安装pptpd服务"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: pptp
+#+PAGE_CATETORIES: network
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+PPTP是远程接入VPN技术的其中一种，一般用于企业员工通过互联网接入内部网。PPTP作为一种服务，一般在路由器或者防火墙上实现。但本文主要讲述，在没有网络设备的情况下，如何通过服务器安装pptpd来实现remote access VPN功能。
+#+HTML: <!--abstract-end-->
+
+
+* 安装pptpd
+
+#+BEGIN_EXAMPLE
+yum -y install pptpd
+#+END_EXAMPLE
+
+* 设置
+** 编辑/etc/sysctl.conf
+
+#+BEGIN_EXAMPLE
+net.ipv4.ip_forward = 1
+#+END_EXAMPLE
+
+** 配置脚本
+将如下文件内容加入pptp.sh, 并手工执行。
+
+#+BEGIN_SRC sh
+sysctl -p
+echo "localip 192.168.240.1" >> /etc/pptpd.conf
+echo "remoteip 192.168.240.101-200" >> /etc/pptpd.conf
+echo "ms-dns 8.8.8.8" >> /etc/ppp/options.pptpd
+echo "ms-dns 8.8.4.4" >> /etc/ppp/options.pptpd
+iptables --flush POSTROUTING --table nat
+iptables --flush FORWARD
+iptables -A INPUT -p tcp -m tcp --dport 1723 -j ACCEPT
+iptables -A INPUT -p gre -j ACCEPT
+iptables -t nat -A POSTROUTING -s 192.168.240.0/24 -o ens33 -j MASQUERADE
+iptables -A INPUT -s 192.168.240.0/24 -p tcp -m tcp -j ACCEPT
+service iptables save
+service pptpd restart
+service iptables restart
+chkconfig pptpd on
+chkconfig iptables on
+#+END_SRC
+
+** 编辑/etc/ppp/chap-secrets
+
+#+BEGIN_EXAMPLE
+帐号名称 pptpd 密码 *
+wesley pptpd 123456 *
+#+END_EXAMPLE
+
+** 连线测试
+
+部分客户端操作系统，可能需要手工添加私网路由。例如mac系统：
+
+#+BEGIN_SRC sh
+sudo route add -net 172.16.0.0 192.168.240.1
+#+END_SRC

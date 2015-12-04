@@ -1,0 +1,55 @@
+#+TITLE: Linux常用技巧
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: linux
+#+PAGE_CATETORIES: sysadmin
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+Linux常用技巧备忘录。
+#+HTML: <!--abstract-end-->
+
+* 查找
+** 查找并按文件大小排序
+*** 方法一
+
+#+BEGIN_SRC sh
+ls -lS /path/to/folder/
+#+END_SRC
+
+缺点：只列出当前文件夹
+
+*** 方法二
+
+#+BEGIN_SRC sh
+ls -lR | grep '^-' | sort -k 5 -rn
+#+END_SRC
+
+缺点：不会列出文件的完整路径
+
+*** 方法三
+
+#+BEGIN_SRC sh
+find -type f  | xargs du -h | sort -rn
+#+END_SRC
+
+* 设置时区
+
+#+BEGIN_SRC sh
+mv /etc/localtime /etc/localtime.bak
+ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+#+END_SRC
+
+* 查看RPM包含的文件
+
+#+BEGIN_SRC sh
+repoquery -ql nginx
+rpm -qpl filename.rpm
+#+END_SRC
+
+* 查看某个端口对应程序
+
+#+BEGIN_SRC sh
+lsof -i :4000
+#+END_SRC

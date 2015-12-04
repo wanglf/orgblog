@@ -1,0 +1,51 @@
+#+TITLE:  "神奇的openssh"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: ssh
+#+PAGE_CATETORIES: tools
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+openssh是管理服务器的一种通讯协议，本身包含加密功能。此外，openssh还有如下用途:
+- socks代理
+- 目的端口转发
+- x forward
+- 文件传输协议
+#+HTML: <!--abstract-end-->
+
+* SSH作socks代理
+
+#+BEGIN_SRC sh
+ssh -p 22 -qTfnN -D 0.0.0.0:1919 root@hostname
+#+END_SRC
+
+如此时连接hostname成功，则本机侦听1919，并可为其它机器提供socks代理服务。openssh同时支持socksv4与socksv5。
+
+
+* SSH作DNAT
+
+假如A可以连接B，B可连接C，但A不能直连C。此时我们可以在B上开启端口转发，当A连接B的某端口时，实际连接的是机器C。
+#+BEGIN_SRC sh
+ssh -p 22 -qTfnN -g -L 33089:ip_of_c:3389 root@localhost
+#+END_SRC
+
+上述示例，我们在A上连接B的33089端口，实际连接的是机器C的3389端口。
+
+* SSH X forward
+
+#+BEGIN_SRC sh
+ssh -X <server>
+#+END_SRC
+
+此时我们可以在本地运行server上的X程序，例如通过服务器上的wireshark gui抓包。
+
+* SSH作为文件传输协议
+
+#+BEGIN_SRC sh
+/usr/bin/rsync --delete -avz -e 'ssh -p 22222' root@nginx01:/etc/nginx/ /etc/nginx/
+#+END_SRC
+
+* 参考链接
+
+[[https://www.ibm.com/developerworks/cn/linux/l-cn-sshforward/][实战SSH端口转发]]

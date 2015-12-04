@@ -1,0 +1,80 @@
+#+TITLE:  "vim-snipmate插件"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: vim
+#+PAGE_CATETORIES: editor
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+vim-snipmate插件的安装及使用
+#+HTML: <!--abstract-end-->
+
+* 安装方法
+
+如vim插件通过Vundle进行管理，则在vimrc中添加如下内容：
+
+#+BEGIN_EXAMPLE
+" snipMate plugin
+Plugin 'MarcWeber/vim-addon-mw-utils'
+Plugin 'tomtom/tlib_vim'
+Plugin 'garbas/vim-snipmate'
+Plugin 'honza/vim-snippets'
+let g:snips_author='wanglifeng'
+#+END_EXAMPLE
+
+
+* 使用方法
+
+以C语言为例，默认的snippet文件为c.snippets，已预定义了部分snippet内容
+
+例: 输入include按tab键，内容补全为如下内容：
+
+
+#+BEGIN_SRC c
+#include <stdio.h>
+#+END_SRC
+
+* 自定义snippet内容
+
+#+BEGIN_SRC c
+## self defined snippets
+snippet basic
+    /*
+     * author: `g:snips_author`
+     * filename: `vim_snippets#Filename("$1.c")`
+     * date: `strftime("%Y-%m-%d")`
+     *
+     */
+
+    #include <stdio.h>
+    #include <stdlib.h>
+    int
+    main() {
+        ${0}
+        return EXIT_SUCCESS;
+    }
+#+END_EXAMPLE
+
+- ${0}表示光标位置
+- g:snips_author表示vimrc中的变量
+- Filename为插件自带的函数
+- strftime为vim函数
+
+在C源文件abc.c输入basic并加tab补全后，转换为如下内容：
+
+#+BEGIN_SRC c
+/*
+ * author: wanglifeng
+ * filename: abc.c
+ * date: 2015-07-22
+ *
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+int
+main() {
+    return EXIT_SUCCESS;
+}
+#+END_SRC

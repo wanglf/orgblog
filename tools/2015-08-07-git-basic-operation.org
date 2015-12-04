@@ -1,0 +1,85 @@
+#+TITLE:  "Git basic operation"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: git
+#+PAGE_CATETORIES: tools
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+本文介绍git常用操作。
+#+HTML: <!--abstract-end-->
+
+* flow chart
+
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/git/bg20150807.png
+#+END_CENTER
+
+* create project
+
+#+BEGIN_SRC sh
+mkdir -p repo.git
+git init
+#+END_SRC
+
+#+BEGIN_SRC sh
+git clone url/filepath repo.git
+#+END_SRC
+
+#+BEGIN_SRC sh
+mkdir -p repo.git
+git init --bare
+#+END_SRC
+
+=notes: repo only, not allowed to see text content in file=
+
+
+* stage,commit,push, tags
+
+#+BEGIN_SRC sh
+echo "bin/" > .gitignore
+echo "*.o" >> .gitignore
+git add README.md
+git add -A .
+git reset
+git commit -m "1st commit"
+git remote add origin git@github.com:/username/repo.git
+
+git tag -a v0.1.2 -m “version0.1.2”
+git tag -a v0.1.1 9fbc3d0 -m "version0.1.1"
+
+git push origin master
+#+END_SRC
+
+* branches
+
+#+BEGIN_SRC sh
+git checkout -b feature
+git checkout master
+git checkout master~2 Makefile
+rm -f hello.c
+git checkout hello.c
+git stash
+git stash list
+git stash pop
+#+END_SRC
+
+* rebase
+
+#+BEGIN_SRC sh
+git rebase -i origin/master
+git rebase -i HEAD~3
+#+END_SRC
+
+=rebase can be used to combine multiple commits into single one before push to remote repo=
+
+* git设置socks 代理
+
+vi ~/.ssh/config
+#+BEGIN_EXAMPLE
+Host github.com
+  User  git
+  ProxyCommand  nc -x localhost:1080 %h %p
+#+END_EXAMPLE

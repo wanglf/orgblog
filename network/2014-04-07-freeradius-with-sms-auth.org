@@ -1,0 +1,251 @@
+#+TITLE: "Freeradius with sms auth"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: freeradius
+#+PAGE_CATETORIES: network
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+Freeradius是一个开源的AAA认证服务器, 本文讲述Freeradius如何利用sql接口实现短信认证。
+#+HTML: <!--abstract-end-->
+
+* 需求分析
+
+某客户现已有一个VPDN接入平台，接入用户采用用户名+口令的认证方式，AAA认证服务器采用Cisco ACS认证系统，NAS为一台Cisco 2921路由器。现考虑到VPDN本身虽已提供私密性，但口令容易被窃取或不经意泄漏，即实际访问者与账户拥有者是不同身份。在安全领域，手机短信验证与动态口令卡都属于双因素认证，且企业本身如已有短信网关接口，则投入的成本基本只需要考虑短信发送费用即可。本文讲述freeradius如何结合sql接口，实现短信验证方式。
+
+* freeradius安装与配置
+
+** 安装步骤
+
+参见：[[http://wiki.freeradius.org/building/Build][Building FreeRadius]]
+
+安装视操作系统版本，推荐通过yum或者apt方式，包括freeradius-mysql接口。
+
+** 配置sql接口
+
+参见：[[http://wiki.freeradius.org/guide/SQL-HOWTO][SQL HOWTO]]
+
+** NAS配置
+
+#+BEGIN_EXAMPLE
+aaa new-model
+!
+aaa authentication login default local
+aaa authentication ppp default group radius
+aaa authorization network default group radius 
+aaa accounting network default
+ action-type start-stop
+ group radius
+!
+!
+async-bootp dns-server 1.1.1.2
+async-bootp nbns-server 1.1.1.2
+vpdn enable
+!
+vpdn-group 1
+! Default PPTP VPDN group
+ accept-dialin
+  protocol pptp
+  virtual-template 1
+!
+interface Virtual-Template1
+ ip unnumbered FastEthernet0/0
+ no ip redirects
+ no ip unreachables
+ no peer default ip address
+ no keepalive
+ ppp encrypt mppe auto
+ ppp authentication ms-chap ms-chap-v2 pap chap
+!
+radius-server host 1.1.1.2 auth-port 1812 acct-port 1813 key radius_key
+!
+#+END_EXAMPLE
+
+* WEB服务器配置mod_perl支持
+** 安装mod_perl
+
+#+BEGIN_EXAMPLE
+yum install mod_perl
+#+END_EXAMPLE
+
+** 配置httpd.conf
+
+#+BEGIN_EXAMPLE
+LoadModule perl_module modules/mod_perl.so
+ScriptAlias /cgi-bin/ "/var/www/cgi-bin/"
+<Directory "/var/www/cgi-bin">
+    SetHandler perl-script
+    PerlResponseHandler ModPerl::Registry
+    PerlOptions +ParseHeaders
+    Options +ExecCGI
+</Directory>
+#+END_EXAMPLE
+
+* 动态口令页面
+
+** 编写表单
+
+#+BEGIN_SRC html
+<html>
+<title>vpn密码申请系统</title>
+<body>
+<form method="post" action="/cgi-bin/test.cgi"> 
+<p>手机号<input name="mobileno"></p>
+<p>
+<input type="submit" value="提交表单">
+<input type="reset" value="清除">
+</p>
+</form> 
+</body>
+</html>
+#+END_SRC 
+
+
+** 编写cgi脚本
+
+#+BEGIN_SRC perl
+#!/usr/bin/perl
+use DBI;
+
+my ($data, $i, @data, $key, $val, %FORM);
+
+if ($ENV{'REQUEST_METHOD'} eq "GET") {
+        $data = $ENV{'QUERY_STRING'};
+} elsif ($ENV{'REQUEST_METHOD'} eq "POST") {
+        read(STDIN,$data,$ENV{'CONTENT_LENGTH'});
+}
+
+@data = split(/&/,$data);
+foreach $i (0 ..$#data) {
+        $data[$i] =~ s/\+/ /g;
+        ($key, $val) = split(/=/,$data[$i],2);
+         $key =~ s/%(..)/pack("c",hex($1))/ge;
+         $val =~ s/%(..)/pack("c",hex($1))/ge;
+         $val =~ s///g;
+         $FORM{$key} .= "\0" if (defined($FORM{$key}));
+         $FORM{$key} .= $val;
+}
+
+$mobileno=$FORM{'mobileno'};
+
+my (@token, $token);
+for (my $i = 0; $i < 6; $i++) {
+ $token[$i] = int (rand(10));
+ $token .= $token[$i];
+}
+my $dbname = 'radius';
+my $dbuser = 'radius';
+my $dbpass = 'radpass';
+my $dbtable = 'radcheck';
+
+my $dbh = DBI->connect("DBI:mysql:$dbname:host=localhost", $dbuser, $dbpass, {RaiseError => 0, ShowErrorStatement => 1});
+my $sth = $dbh->prepare('set names utf8');
+$sth->execute();
+
+$sth = $dbh->prepare(qq{
+	select username, value from $dbtable where attribute='Cleartext-Password'
+});
+my (@username,@value);
+
+$sth->execute();
+
+
+while(my @row = $sth->fetchrow_array()){
+	push @username, $row[0];
+	push @value, $row[1];
+}
+
+print "Content-type: text/html\n\n";
+
+if(grep {$_ eq $mobileno} @username) {
+	&printheader;
+	&updaterecord;
+	&userpassprompt;
+	&sendsms;	
+	&printfooter;
+} else {
+	&printheader;
+	&userforbidprompt;
+	&printfooter;
+}
+
+
+sub sendsms {
+}
+
+sub updaterecord {
+	$sth = $dbh->prepare(qq{
+		update `radcheck` set
+			`value` = '$token'
+		where
+			`username` = '$mobileno' and `attribute` = 'Cleartext-Password';
+	});
+	$sth->execute();
+}
+sub userforbidprompt {
+	print "<p>该手机号未开通VPN服务。</p>\n";
+	print '<a href="../test.html">返回</a>';
+}
+
+sub userpassprompt {
+	print "<p>VPN用户名与密码已经发送至手机，请查收。</p>\n";
+	print "<p>注意：密码的有效期截止于接收到短信当天23：59：59，次日失效, 但不影响已拨号用户使用</p>\n";
+	print '<a href="../test.html">返回</a>';
+}
+
+sub printheader {
+	print "<html>
+					<head>
+						<title>VPN密码申请结果</title>
+					</head>
+						<body>
+				";
+}
+
+sub printfooter {
+	print "		</body>
+				</html>
+				";
+}
+
+#+END_SRC
+
+* 优化
+** 凌晨让密码失效
+
+编写一个perl脚本，更新数据库，让用户的密码随机化,放在crontab中执行。
+
+** 单个用户只能开启一个会话
+
+#+BEGIN_EXAMPLE
+mysql> select * from radcheck;
++----+-------------+--------------------+----+--------+
+| id | username    | attribute          | op | value  |
++----+-------------+--------------------+----+--------+
+|  1 | 18900001111 | Cleartext-Password | := | 881230 |
+|  5 | 18900001111 | Simultaneous-Use   | := | 1      |
++----+-------------+--------------------+----+--------+
+#+END_EXAMPLE
+
+
+
+** 用户获得固定IP
+
+#+BEGIN_EXAMPLE
+mysql> select * from radreply;
++----+-------------+-------------------+----+-------------+
+| id | username    | attribute         | op | value       |
++----+-------------+-------------------+----+-------------+
+|  1 | 18900001111 | Framed-IP-Address | =  | 1.1.10.1    |
++----+-------------+-------------------+----+-------------+
+1 row in set (0.00 sec)
+#+END_EXAMPLE
+
+* 总结
+** 流程图
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/FreeRadiusWithSMSAuth.png
+#+END_CENTER
+

@@ -1,12 +1,15 @@
 .PHONY: all clean slide
 
-menu_dir = build/jekyll/menu
-jekyll_dir = build/jekyll
-reveal_dir = $(abspath build/reveal)
+menu_dir = /var/www/www.wanglifeng.info/menu
+jekyll_dir = /var/www/www.wanglifeng.info
+reveal_dir = $(abspath /var/www/www.wanglifeng.info/reveal)
 
-menu = menu slide
-posts = algorithm editor network kernel language leaf linux tools
+menu = menu
+posts = editor network sysadmin tools language
 slide = linux
+
+menupages:
+	puborg -n -j $(menu) -o $(menu_dir)
 
 posts:
 	puborg -n -j $(menu) -o $(menu_dir)
@@ -26,3 +29,9 @@ all: slide posts latex beamer
 clean:
 	puborg -c $(menu) $(posts)
 	cd slide && puborg -c $(slide)
+
+rmsitecontent: 
+	puborg -c $(menu) $(posts)
+	cd slide && puborg -c $(slide)
+	rm -rf /var/www/www.wanglifeng.info/_posts/
+	rm -rf /var/www/www.wanglifeng.info/_site/

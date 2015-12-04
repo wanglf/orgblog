@@ -1,0 +1,98 @@
+#+TITLE: "Web Server Log Based Analysis"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: webalizer
+#+PAGE_CATETORIES: sysadmin
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+如何利用webalizer，通过分析Web Server的accesslog生成各类统计报表。
+#+HTML: <!--abstract-end-->
+
+* 日志分析原理
+
+日志格式如下:
+
+#+BEGIN_EXAMPLE
+192.168.45.13 - - [24/May/2005:11:20:39 -0400] "GET /mypage.html HTTP/1.1" 200 117
+192.168.45.13 - - [24/May/2005:11:20:40 -0400] "GET /myimage1.jpg HTTP/1.1" 200 231
+192.168.45.13 - - [24/May/2005:11:20:41 -0400] "GET /myimage2.jpg HTTP/1.1" 200 432
+#+END_EXAMPLE
+
+我们可以从中得到哪些信息呢？
+
+- 从哪来，即Source IP
+- 哪个时间点
+- 哪种类型操作, Get、Post还是其它类型
+- 访问哪个页面
+- 采用哪个协议版本
+- 返回的状态码
+- 报文长度
+
+据此，我们又可以生成哪些信息呢?
+
+- 每个页面被访问了多少次，生成TOP N热门页面
+- 哪个来源IP的请求最多
+- 哪个时间段的访问量最大
+- 流量统计
+- 返回状态码统计
+
+又有哪些是我们无法根据日志信息直接分析得到的呢?
+
+- 按用户统计
+- 用户的停留时间
+
+主要的原因是HTTP本身是无状态的，服务器只是侦听80端口等待请求。你来一个请求，我就处理，不然我就坐着喝咖啡啦。
+
+* 安装配置
+
+** 安装步骤
+
+Centos操作系统可以通过如下方式安装：
+
+#+BEGIN_EXAMPLE
+yum install webalizer
+#+END_EXAMPLE
+
+** 配置
+
+webalizer的配置文件名称为/etc/webalizer.conf，主要的配置选项如下：
+
+#+BEGIN_EXAMPLE
+LogFile        /var/log/nginx/access.log
+OutputDir      /var/www/usage
+HostName       www.wanglifeng.info
+
+HideReferrer  www.wanglifeng.info
+HideReferrer  1.2.3.4
+
+HideURL   *.css
+HideURL   *.js
+HideURL   *.ico
+HideURL   *.woff
+
+SearchEngine  baidu.com  wd=
+SearchEngine  yahoo.com p=
+#+END_EXAMPLE
+
+** crontab
+
+#+BEGIN_EXAMPLE
+59 23 * * * /usr/bin/webalizer > /dev/null 2>&1
+#+END_EXAMPLE
+
+=注：由于web网站统计信息安全上比较敏感，建议开启HTTP认证，拒绝来宾用户访问。=
+
+** 首页效果图
+
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/webalizer01.png
+#+END_CENTER
+
+* 参考资料
+
+1. [[http://www.webalizer.org/simpleton.html][Simpletons Guide to Web Server Analysis]]
+2. [[ftp://ftp.mrunix.net/pub/webalizer/README][Webalizer README]]
+3. [[http://www.webalizer.org/webalizer_help.html][Webalizer Quick Help]]
