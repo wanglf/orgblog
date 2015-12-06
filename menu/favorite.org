@@ -9,7 +9,7 @@
 
 - *[[https://www.centos.org/][CentOS]]* | *[[http://www.ubuntu.com/][Ubuntu]]*
 - *[[http://www.gluster.org/][GlusterFS]]* | *[[http://ceph.com/][Ceph]]*
-- *[[https://www.docker.com/][docker.com]]* | *[[http://www.linux-kvm.org/page/Main_Page][Linux-KVM]]* | *[[https://www.openstack.org/][openstack.org]]*
+- *[[https://www.docker.com/][docker.com]]* | *[[http://www.linux-kvm.org/page/Main_Page][Linux-KVM]]* | *[[https://www.openstack.org/][openstack.org]]* | *[[https://linuxcontainers.org/][LinuxContainers]]*
 - *[[http://www.linuxvirtualserver.org/][LVS]]* | *[[http://www.haproxy.org/][HAProxy]]* | *[[http://www.keepalived.org/][Keepalived]]*
 - *[[http://nginx.org/][nginx]]* | *[[http://tomcat.apache.org/][tomcat]]*
 - *[[https://www.varnish-cache.org/][varnish]]*
@@ -30,7 +30,7 @@
 - *[[http://stackoverflow.com/][Stack Overflow]]* | *[[http://stackexchange.com/][Stack Exchange]]* | *[[https://www.quora.com/][Quora]]* | *[[https://www.zhihu.com/][Zhihu]]*
 - *[[https://youtube.com][Youtube]]*
 
-** 计算机学习资源
+** 学习资源
 
 - *[[http://yeasy.gitbooks.io/docker_practice/content/][Docker从入门到实践]]*
 - *[[http://c-faq.com/index.html][C FAQ]]*
@@ -40,15 +40,15 @@
 - *[[https://siddontang.gitbooks.io/leetcode-solution/content/][leetcode题解]]*
 - *[[http://acl.readthedocs.org/en/latest/][Ansi Common Lisp]]*
 
-** Blog
+** 网志
 
-|--------+------------+---------------------+------------------|
-| [[http://coolshell.cn/][酷壳]]   | [[http://haiyangxu.github.io/][Haiyang Xu]] | [[http://edsionte.com/techblog/][edsionte's TechBlog]] | [[http://www.liaoxuefeng.com/][廖雪峰]]           |
-| [[http://ruanyifeng.com][阮一峰]] | [[http://icodeit.org][icodeit]]    | [[http://blog.zhaojie.me/][老赵点滴]]            | [[http://blog.codingnow.com/%0A%0A%0A][云风]]             |
-| [[http://colobu.com/][鸟窝]]   | [[http://www.yinwang.org/][王垠]]       | [[http://www.gocalf.com/blog/][GoCalf Blog]]         | [[http://www.52nlp.cn/][我爱自然语言处理]] |
-| [[http://www.yangzhiping.com/][阳志平]] | [[http://blog.csdn.net/lisonglisonglisong][神奕的专栏]] | [[http://mingxinglai.com/cn/][赖明星]]              | [[https://github.com/julycoding/The-Art-Of-Programming-By-July][编程之法]]         |
-|--------+------------+---------------------+------------------|
-
+|----------+------------+---------------------+------------------|
+| [[http://yemic.com/][一叶空间]] | [[http://ruanyifeng.com][阮一峰]]     | [[http://blog.zhaojie.me/][老赵点滴]]            | [[http://blog.codingnow.com/%0A%0A%0A][云风]]             |
+| [[http://www.juvenxu.com/][Juven Xu]] | [[http://icodeit.org][icodeit]]    | [[http://foocoder.com/][foocoder]]            | [[https://jysperm.me/][王子亭]]           |
+| [[http://coolshell.cn/][酷壳]]     | [[http://haiyangxu.github.io/][Haiyang Xu]] | [[http://edsionte.com/techblog/][edsionte's TechBlog]] | [[http://www.liaoxuefeng.com/][廖雪峰]]           |
+| [[http://colobu.com/][鸟窝]]     | [[http://www.yinwang.org/][王垠]]       | [[http://www.gocalf.com/blog/][GoCalf Blog]]         | [[http://www.52nlp.cn/][我爱自然语言处理]] |
+| [[http://www.yangzhiping.com/][阳志平]]   | [[http://blog.csdn.net/lisonglisonglisong][神奕的专栏]] | [[http://mingxinglai.com/cn/][赖明星]]              | [[https://github.com/julycoding/The-Art-Of-Programming-By-July][编程之法]]         |
+|----------+------------+---------------------+------------------|
 
 ** 社交
 

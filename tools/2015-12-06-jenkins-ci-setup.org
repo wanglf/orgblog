@@ -1,0 +1,162 @@
+#+TITLE:  "持续集成工具之jenkins"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: jenkins
+#+PAGE_CATETORIES: tools
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+本文介绍使用jenkins实现持续集成。
+#+HTML: <!--abstract-end-->
+
+* jenkins安装
+
+官方提供的是一个war包，可以直接放在tomcat容器中运行。jenkins不需要任何后台数据库支持，所有的变更纪录均放置在JENKINS_HOME，默认为~/.jenkins。
+
+单独运行jenkins的命令如下:
+#+BEGIN_EXAMPLE
+java -jar jenkins.war --httpPort=8081
+#+END_EXAMPLE
+
+* 插件安装
+
+选择Manage Jenkins -> Manage Plugins进行插件的安装。如果CI服务器本身需要代理才能连接互联网，可以在Advanced中进行设置。常用的插件有Github Plugins，安装此插件同时会安装所依赖插件。
+
+* 配置环境
+
+Manage Jenkins -> Configure System 此处设置JDK的HOME目录，Maven的目录, git可执行文件路径等。
+
+* 新建Job
+
+输入Job的名称，此处以从git仓库clone Maven项目作为示例。
+
+** SCM
+1. Source Code Management 选择git
+2. Repository URL: ssh://admin@gerrit:29418/reponame
+
+** Build Triggers
+1. Build when a change is pushed to GitHub (代码更新时build)
+2. Poll SCM (周期性从repo中checkout)
+#+BEGIN_EXAMPLE
+*/10 * * * *
+#+END_EXAMPLE
+
+** Configure Maven
+1. Root POM : pom.xml
+2. Goals and options: clean install
+
+** Post Steps
+
+Execute shell
+
+#+BEGIN_SRC sh
+#!/bin/sh
+# copy built file to remote http server
+project=easy-springmvc-maven
+war_name=${project}.war
+file_path=/root/.jenkins/jobs/${project}/workspace/target
+now=$(date +"%Y%m%d%H%M%S")
+
+cd $file_path
+if [ -f ${war_name} ]; then
+scp ${war_name} root@filesrv01:/usr/share/nginx/html/files/dist/${project}-${now}.war
+cp ${war_name} /opt/tomcat/webapps/${project}-${now}.war
+else
+echo "${war_name} unexists"
+fi
+#+END_SRC
+
+
+* 备机安装与数据同步
+** 同步脚本
+备机的安装方法与主机相同，数据通过如下脚本同步:
+
+#+BEGIN_SRC sh
+#!/bin/sh
+#script name:rsyncjenkins.sh
+
+RsyncBin="/usr/bin/rsync"
+RsyncPerm='-avz -e ssh --delete --bwlimit=8000'
+jenkins_dir='/root/.jenkins'
+
+LogFileDir='/var/log/rsyncjenkins'
+Date=`date +%Y-%m-%d`
+
+#check function
+
+function check {
+if [ $? -eq 0 ];then
+echo -e "33[1;32mRsync is success!33[0m" >>$LogFileDir/$Date.log
+else
+echo -e "33[1;31mRsync is fail!33[0m" >>$LogFileDir/$Date.log
+fi
+}
+
+if [ ! -d "$jenkins_dir" ];then
+mkdir -pv $jenkins_dir
+fi
+
+if [ ! -d "$LogFileDir" ];then
+mkdir -pv $LogFileDir
+fi
+
+echo 'Now start to rsync jenkins home directory!' >>$LogFileDir/$Date.log
+$RsyncBin $RsyncPerm root@tomcat01:$jenkins_dir/jobs/ $jenkins_dir/jobs/ >>$LogFileDir/$Date.log
+$RsyncBin $RsyncPerm root@tomcat01:$jenkins_dir/plugins/ $jenkins_dir/plugins/ >>$LogFileDir/$Date.log
+$RsyncBin $RsyncPerm root@tomcat01:$jenkins_dir/*.xml $jenkins_dir/ >>$LogFileDir/$Date.log
+check"]]"}
+#+END_SRC
+
+** 定期执行
+#+BEGIN_EXAMPLE
+00 00 * * * /bin/sh /root/sh/rsyncjenkins.sh > /dev/null 2>&1
+#+END_EXAMPLE
+
+=备机需要重启容器才能加载新的配置。=
+
+* 附录: Maven通过nexus下载构建的配置文件
+
+cat ~/.m2/settings.xml
+
+#+BEGIN_SRC xml
+  <?xml version="1.0" encoding="UTF-8"?>
+  <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <mirrors>
+      <mirror>
+        <id>nexus</id>
+        <mirrorOf>*</mirrorOf>
+        <name>Nexus Public Mirror</name>
+        <url>http://nexusip:8081/nexus/content/groups/public</url>
+      </mirror>
+    </mirrors>
+    <profiles>
+      <profile>
+        <id>nexus</id>
+        <repositories>
+          <repository>
+            <id>central</id>
+            <url>http://central</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>true</enabled></snapshots>
+          </repository>
+        </repositories>
+        <pluginRepositories>
+          <pluginRepository>
+            <id>central</id>
+            <url>http://central</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>true</enabled></snapshots>
+          </pluginRepository>
+        </pluginRepositories>
+      </profile>
+    </profiles>
+    <activeProfiles>
+      <activeProfile>nexus</activeProfile>
+    </activeProfiles>
+  </settings>
+#+END_SRC
+
+主要配置mirror，因为*可通配所有路径，此时profile中的url已经没意义，所有的构建将全部通过mirror指定的链接，即nexus中的public repository group去下载。
