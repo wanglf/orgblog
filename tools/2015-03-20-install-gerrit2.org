@@ -35,8 +35,16 @@ FLUSH PRIVILEGES;
 adduser gerrit2
 mkdir -p /opt/gerrit2
 chown -R gerrit2.gerrit2 /opt/gerrit2
+cp gerrit.war /home/gerrit2/
+chown -R gerrit2:gerrit2 /home/gerrit2/gerrit.war
 su - gerrit2
 java -jar gerrit.war init -d /opt/gerrit2
+#+END_SRC
+
+* 安装delete-project
+
+#+BEGIN_SRC sh
+cp delete-project.jar /opt/gerrit2/plugins/
 #+END_SRC
 
 * gerrit2 启动
@@ -51,10 +59,10 @@ cd /opt/gerrit2/bin
 #+BEGIN_SRC sh
 git config --file /opt/gerrit2/etc/gerrit.config auth.type HTTP
 git config --file /opt/gerrit2/etc/gerrit.config --unset auth.httpHeader
-git config --file /opt/gerrit2/etc/gerrit.config auth.emailFormat '{0}@citicbank.com'
+git config --file /opt/gerrit2/etc/gerrit.config auth.emailFormat '{0}@gmail.com'
 
 git config --global user.name "wanglf"
-git config --global user.email "wanglifeng_hz@citicbank.com"
+git config --global user.email "wlfqware@gmail.com"
 #+END_SRC
 
 =htpasswd生成web服务器认证密码文件， 并修改nginx配置如下=
@@ -92,6 +100,12 @@ IdentityFile ~/.ssh/id_rsa
 ssh gerrit2
 #+END_EXAMPLE
 
+* 客户端alias cpmsgid
+
+#+BEGIN_SRC sh
+alias cpmsgid='gitdir=$(git rev-parse --git-dir); scp -p -P 29418 admin@gerrit2:hooks/commit-msg ${gitdir}/hooks/'
+#+END_SRC
+
 * 第一个project的workflow
 
 ** new project
@@ -108,6 +122,7 @@ chown -R gerrit2.gerrit2 /opt/git/
 su - gerrit2
 cd /opt/git/
 git clone ssh://admin@hostip:29418/test
+cpmsgid
 #+END_SRC
 
 ** git push
@@ -115,6 +130,7 @@ git clone ssh://admin@hostip:29418/test
 日常git操作，commit之后，利用如下命令推送至changes
 
 #+BEGIN_SRC sh
+cpmsgid
 git add readme.MD
 git commit -m "initial commit"
 git push origin HEAD:refs/for/master

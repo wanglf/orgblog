@@ -46,6 +46,10 @@ ssh -X <server>
 /usr/bin/rsync --delete -avz -e 'ssh -p 22222' root@nginx01:/etc/nginx/ /etc/nginx/
 #+END_SRC
 
+=关于openssh sftp设置的方法，可参考下文=
+
+[[../sysadmin/openssh-sftp-setting.html][OpenSSH SFTP chroot设置方法]]
+
 * 参考链接
 
 [[https://www.ibm.com/developerworks/cn/linux/l-cn-sshforward/][实战SSH端口转发]]
