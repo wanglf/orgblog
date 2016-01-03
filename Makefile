@@ -5,8 +5,8 @@ jekyll_dir = /var/www/www.wanglifeng.info
 reveal_dir = $(abspath /var/www/www.wanglifeng.info/reveal)
 
 menu = menu
-posts = editor network sysadmin tools language
-slide = linux
+posts = editor network sysadmin tools language linux
+#slide = linux
 
 menupages:
 	puborg -n -j $(menu) -o $(menu_dir)
