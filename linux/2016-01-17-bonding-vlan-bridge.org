@@ -1,0 +1,116 @@
+#+TITLE: "Centos bonding基础上设置vlan与bridge"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: bond networking
+#+PAGE_CATETORIES: linux
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+为了提升系统可用性，一般会利用linux自带的bonding技术实现双网卡绑定。在虚拟机环境下，有时为了提高机器的使用效率，还需要在同一台机器配置不同的网段，这时可以通过vlan技术实现。
+#+HTML: <!--abstract-end-->
+
+* 关闭NetworkManager
+
+#+BEGIN_SRC sh
+service NetworkManager stop
+chkconfig --level 2345 NetworkManager off
+chkconfig --level 2345 network on
+service network start
+#+END_SRC
+
+* 加载bonding模块
+
+#+BEGIN_SRC sh
+cat > /etc/modprobe.d/bonding.conf << EOF
+alias bond0 bonding
+EOF
+#+END_SRC
+
+* 配置bond接口
+#+BEGIN_SRC sh
+cat > /etc/sysconfig/network-scripts/ifcfg-bond0 << EOF
+DEVICE=bond0
+NAME=bond0
+TYPE=bond
+BONDING_MASTER=yes
+BONDING_OPTS="mode=1 miimon=100"
+IPV6INIT=no
+BOOTPROTO=none
+ONBOOT=yes
+MTU=9000
+EOF
+#+END_SRC
+
+* 物理接口
+** nic01
+
+#+BEGIN_EXAMPLE
+DEVICE=ens2f0
+NAME=ens2f0
+TYPE=Ethernet
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+#+END_EXAMPLE
+
+** nic02
+
+#+BEGIN_EXAMPLE
+DEVICE=ens2f1
+NAME=ens2f1
+TYPE=Ethernet
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+#+END_EXAMPLE
+
+* bond子接口
+** bond0.905
+
+#+BEGIN_EXAMPLE
+DEVICE=bond0.905
+VLAN=yes
+IPV6INIT=no
+BOOTPROTO=none
+ONBOOT=yes
+BRIDGE=brnet11
+#+END_EXAMPLE
+
+** bond0.906
+
+#+BEGIN_EXAMPLE
+DEVICE=bond0.906
+VLAN=yes
+IPV6INIT=no
+BOOTPROTO=none
+ONBOOT=yes
+BRIDGE=brnet06
+#+END_EXAMPLE
+
+* bridge接口
+
+** brnet06
+
+#+BEGIN_EXAMPLE
+DEVICE=brnet06
+BOOTPROTO=none
+ONBOOT=yes
+TYPE=Bridge
+IPADDR=192.168.6.151
+NETMASK=255.255.255.0
+GATEWAY=192.168.6.254
+IPV6INIT=no
+#+END_EXAMPLE
+
+** brnet11
+
+#+BEGIN_EXAMPLE
+DEVICE=brnet11
+BOOTPROTO=none
+ONBOOT=yes
+TYPE=Bridge
+IPV6INIT=no
+#+END_EXAMPLE
