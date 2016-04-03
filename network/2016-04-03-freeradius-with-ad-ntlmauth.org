@@ -1,0 +1,105 @@
+#+TITLE: "Freeradius ntlm_auth with microsoft active directory"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: freeradius
+#+PAGE_CATETORIES: network
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+Freeradius是一款开源的AAA认证服务器, 本文总结Freeradius如何通过NTLM_AUTH接口将微软AD用户作为AAA认证用户数据库。本案例在CentOS 7环境下测试通过。
+#+HTML: <!--abstract-end-->
+
+* 安装服务
+#+BEGIN_EXAMPLE
+yum -y install samba samba-client samba-winbind krb5-server
+#+END_EXAMPLE
+
+* 配置samba与winbind
+** /etc/samba/smb.conf
+#+BEGIN_EXAMPLE
+[global]
+    workgroup = OA
+    security = ads
+    winbind use default domain = no
+    passdb backend = tdbsam
+    password server = 1.1.1.1
+    realm = OA.ABC.COM
+#+END_EXAMPLE
+
+** /etc/krb5.conf
+#+BEGIN_EXAMPLE
+[logging]
+  default = FILE:/var/log/krb5libs.log
+  kdc = FILE:/var/log/krb5kdc.log
+  admin_server = FILE:/var/log/kadmind.log
+
+[libdefaults]
+  dns_lookup_realm = false
+  ticket_lifetime = 24h
+  renew_lifetime = 7d
+  forwardable = true
+  rdns = false
+  default_realm = oa.abc.com
+  #default_ccache_name = KEYRING:persistent:%{uid}
+
+[realms]
+  oa.abc.com = {
+    kdc = 1.1.1.1:88
+    admin_server = 1.1.1.1:749
+  }
+
+[domain_realm]
+  .oa.abc.com = oa.abc.com
+  oa.abc.com = oa.abc.com
+
+[kdc]
+ profile = /var/kerberos/krb5kdc/kdc.conf
+[appdefaults]
+  pam = {
+    debug = false
+    ticket_lifetime = 36000
+    renew_lifetime = 36000
+    forwardable = true
+    krb4_convert = false
+  }
+#+END_EXAMPLE
+
+** /etc/nsswitch.conf
+#+BEGIN_EXAMPLE
+passwd:     files sss winbind
+shadow:     files sss winbind
+group:      files sss winbind
+protocols:  files winbind
+services:   files sss winbind
+netgroup:   files sss winbind
+automount:  files winbind
+#+END_EXAMPLE
+
+* 启用服务
+#+BEGIN_SRC sh
+systemctl enable smb
+systemctl enable winbind
+systemctl start smb
+systemctl start winbind
+#+END_SRC
+
+* 测试
+#+BEGIN_SRC sh
+ntlm_auth --request-nt-key --domain=OA --username=wesley
+#+END_SRC
+正常情况返回NT_STATUS_OK : Success (0x0)
+
+* Freeradius配置
+** /etc/raddb/mods-enabled/ntlm_auth
+#+BEGIN_EXAMPLE
+exec ntlm_auth {
+    wait = yes
+    program = "/usr/bin/ntlm_auth --request-nt-key --domain=OA.ABC.COM --username=%{mschap:User-Name} --password=%{User-Password}"
+}
+#+END_EXAMPLE
+
+** 测试
+#+BEGIN_SRC sh
+radtest -t mschap -x -4 wesley 123456 localhost 10 testing123 0 127.0.0.1
+#+END_SRC

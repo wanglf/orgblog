@@ -68,3 +68,7 @@ Tomcat started.
 #+END_EXAMPLE
 
 =考虑系统安全，建议不要以root用户运行tomcat进程=
+
+#+BEGIN_SRC sh
+su - tomcat /opt/tomcat/bin/startup.sh
+#+END_SRC
