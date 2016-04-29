@@ -114,8 +114,8 @@ set-window-option -g clock-mode-colour green #green
 
 * SecureCRT
 
-[[https://raw.githubusercontent.com/wanglf/dotfiles/master/securecrt/Global.ini][Global.ini]]
-[[https://raw.githubusercontent.com/wanglf/dotfiles/master/securecrt/Color%20Schemes.ini][Color Schemes.ini]]
+- [[https://raw.githubusercontent.com/wanglf/dotfiles/master/securecrt/Global.ini][Global.ini]]
+- [[https://raw.githubusercontent.com/wanglf/dotfiles/master/securecrt/Color%20Schemes.ini][Color Schemes.ini]]
 
 * Terminal type
 
