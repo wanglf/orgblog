@@ -7,7 +7,7 @@
 #+PAGE_LAYOUT: post
 
 #+HTML: <!--abstract-begin-->
-solarized是一种非常流行的配色方案，适用于常见的编辑器，如vim, emacs, 及常见仿真终端。本文纪录iterm2, gnome-terminal, guake, vim编辑器solarized的配置方法。
+solarized是一种非常流行的配色方案，适用于常见的编辑器，如vim, emacs, 及常见仿真终端。本文纪录iterm2, gnome-terminal, guake, SecureCRT, Tmux,  vim编辑器solarized的配置方法。
 #+HTML: <!--abstract-end-->
 
 * iTerm2
@@ -111,6 +111,11 @@ set-option -g display-panes-colour brightred #orange
 set-window-option -g clock-mode-colour green #green
 
 #+END_EXAMPLE
+
+* SecureCRT
+
+[[https://raw.githubusercontent.com/wanglf/dotfiles/master/securecrt/Global.ini][Global.ini]]
+[[https://raw.githubusercontent.com/wanglf/dotfiles/master/securecrt/Color%20Schemes.ini][Color Schemes.ini]]
 
 * Terminal type
 
