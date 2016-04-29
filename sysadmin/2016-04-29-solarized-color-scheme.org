@@ -1,0 +1,82 @@
+#+TITLE: Solarized Color Scheme Setup
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: solarized
+#+PAGE_CATETORIES: sysadmin
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+solarized是一种非常流行的配色方案，适用于常见的编辑器，如vim, emacs, 及常见仿真终端。本文纪录iterm2, gnome-terminal, guake, vim编辑器solarized的配置方法。
+#+HTML: <!--abstract-end-->
+
+* iTerm2
+
+下载 [[https://github.com/altercation/solarized/tree/master/iterm2-colors-solarized][iterm2-colors-solarized]] ，此处采用dark主题。
+
+Open iTerm2, open Preferences, click on the "Profiles" (formerly Addresses, formerly Bookmarks) icon in the preferences toolbar, then select the "colors" tab. Click on the "load presets" and select "import...". Select the Solarized Light or Dark theme file.
+
+You have now loaded the Solarized color presets into iTerm 2, but haven't yet applied them. To apply them, simply select an existing profile from the profile list window on the left, or create a new profile. Then select the Solarized Dark or Solarized Light preset from the "Load Presets" drop down.
+
+* Gnome-terminal
+
+You need the dconf command (if you run a recent Gnome version).
+
+#+BEGIN_SRC sh
+sudo apt-get install dconf-cli
+cd /opt/git
+git clone git@github.com:Anthony25/gnome-terminal-colors-solarized.git
+cd gnome-terminal-colors-solarized
+./install.sh
+#+END_SRC
+
+* Guake
+
+#+BEGIN_SRC sh
+cd /opt/git
+git clone git@github.com:coolwanglu/guake-colors-solarized.git
+cd guake-colors-solarized
+./set_dark solarized
+#+END_SRC
+
+* vim
+
+in vimrc:
+#+BEGIN_SRC vim
+Plugin 'altercation/vim-colors-solarized'
+set background=dark
+colorscheme solarized
+#+END_SRC
+
+* dircolors-solarized
+
+** Linux
+#+BEGIN_SRC sh
+cd /opt/git
+git clone git@github.com:seebi/dircolors-solarized.git
+cp /opt/git/dircolors-solarized/dircolors.256dark ~/.dircolors.256dark
+cat >> ~/.zshrc << EOF
+eval `dircolors ~/.dircolors.256dark`
+EOF
+#+END_SRC
+
+** MAC
+
+#+BEGIN_SRC sh
+cd /opt/git
+git clone git@github.com:seebi/dircolors-solarized.git
+cp /opt/git/dircolors-solarized/dircolors.256dark ~/.dircolors.256dark
+brew install coreutils
+cat >> ~/.zshrc << EOF
+eval `gdircolors ~/.dircolors.256dark`
+alias ls='gls --color=auto'
+EOF
+#+END_SRC
+
+* Terminal type
+
+#+BEGIN_SRC sh
+export TERM=xterm-256color        # for common 256 color terminals (e.g. gnome-terminal)
+export TERM=screen-256color       # for a tmux -2 session (also for screen)
+export TERM=rxvt-unicode-256color # for a colorful rxvt unicode session
+#+END_SRC
