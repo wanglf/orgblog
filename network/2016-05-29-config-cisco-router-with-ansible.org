@@ -1,0 +1,212 @@
+#+TITLE: "用Ansible配置思科网络设备"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+PAGE_TAGS: ansible
+#+PAGE_CATETORIES: network
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+ansible是个什么东西呢？官方的title是“Ansible is Simple IT Automation”——简单的自动化IT工具。这个工具的目标有这么几项：让我们自动化部署APP；自动化管理配置项；自动化的持续交付。Ansible一般通过ssh协议实现linux服务器的管理，但从2.1版本开始，ansible core modules加入了对cisco ios设备的支持，对应的模块为ios_command, ios_config, ios_template。
+#+HTML: <!--abstract-end-->
+
+* 环境准备
+** deploy端
+确认ansible的版本高于2.1
+#+BEGIN_EXAMPLE
+ansible --version
+ansible 2.2.0 (devel f961f9f4d0) last updated 2016/05/28 09:56:33 (GMT +800)
+  lib/ansible/modules/core: (detached HEAD 90e8a36d4c) last updated 2016/05/28 10:23:02 (GMT +800)
+  lib/ansible/modules/extras: (detached HEAD 0e4a023a7e) last updated 2016/05/28 10:23:37 (GMT +800)
+  config file = /etc/ansible/ansible.cfg
+  configured module search path = Default w/o overrides
+#+END_EXAMPLE
+
+如果yum仓库的版本低于2.1，可以通过如下方式从源码安装:
+
+#+BEGIN_SRC sh
+#!/bin/sh
+# shell script to install ansible from git repo or upgrade
+
+count=$#
+if [ $count -ne 1 ]; then
+    echo "usage: setup.sh install|update"
+    exit 1
+fi
+
+param=$1
+repodir=/opt/git
+cd $repodir
+if [ $param == 'install' ]; then
+    git clone git://github.com/ansible/ansible.git --recursive
+    cd ansible
+    source ./hacking/env-setup
+    exit 0
+fi
+
+if [ $param == 'update' ]; then
+    cd ansible
+    git pull --rebase
+    git submodule update --init --recursive
+    exit 0
+fi
+#+END_SRC
+
+** 目标机器
+确认思科路由器配置了ssh服务
+#+BEGIN_EXAMPLE
+ip domain name xyz.com
+crypto key generate rsa modulus 1024
+line vty 0 4
+  transport input telnet ssh
+end
+wr
+#+END_EXAMPLE
+
+* ansible playbook
+** hosts
+#+BEGIN_EXAMPLE
+[cisco]
+r1
+#+END_EXAMPLE
+
+** directory layout
+#+BEGIN_EXAMPLE
+find cisco_ios
+cisco_ios
+cisco_ios/vars
+cisco_ios/vars/main.yml
+cisco_ios/tasks
+cisco_ios/tasks/main.yml
+cisco_ios/templates
+cisco_ios/templates/config.j2
+cisco_ios/site.yml
+#+END_EXAMPLE
+** site.yml
+#+BEGIN_SRC yaml
+- name: change and show running-config on cisco ios device
+  hosts:
+  - cisco
+  gather_facts: no
+  connection: local
+  roles:
+  - cisco_ios
+#+END_SRC
+
+** tasks/main.yml
+#+BEGIN_SRC yaml
+---
+- name: define provider
+  set_fact:
+    provider:
+      host: "{{inventory_hostname}}"
+      username: "{{username}}"
+      password: "{{password}}"
+
+- name: run show commands with ios_command
+  ios_command:
+    provider: "{{provider}}"
+    commands:
+      - show version
+      - show ip interface brief
+      - show inventory
+      - show running | include logging
+  register: show_result
+
+- debug: var=show_result.stdout_lines
+
+- name: change syslog server with ios_config
+  ios_config:
+    provider: "{{ provider }}"
+    authorize: yes
+    lines:
+      - logging {{syslogsrv01}}
+      - logging {{syslogsrv02}}
+    replace: line
+    match: line
+    before:
+      - no logging {{syslogsrv03}}
+      - no logging {{syslogsrv04}}
+    force: true
+
+- name: run show logging after change with ios_config
+  ios_command:
+    provider: "{{ provider }}"
+    commands:
+      - show logging
+  register: after_change_syslog
+
+- debug: var=after_change_syslog.stdout_lines
+
+- name: change syslog server with ios_template
+  ios_template:
+    host: "{{inventory_hostname}}"
+    username: "{{username}}"
+    password: "{{password}}"
+    src: config.j2
+    force: true
+
+- name: run "show running | include logging" after change made
+  ios_command:
+    provider: "{{ provider }}"
+    commands:
+      - show running | include logging
+  register: syslogsrv_list
+
+- debug: var=syslogsrv_list.stdout_lines
+
+- name: save running-config to startup-config
+  ios_command:
+    provider: "{{ provider }}"
+    commands:
+      - write
+  register: write_output
+
+- debug: var=write_output.stdout_lines
+#+END_SRC
+
+** vars/main.yml
+#+BEGIN_SRC yaml
+username: admin
+password: password123
+syslogsrv01: 172.168.10.1
+syslogsrv02: 172.168.10.2
+syslogsrv03: 172.168.10.3
+syslogsrv04: 172.168.10.4
+ntpsrv01: 172.168.10.1
+ntpsrv02: 172.168.10.2
+ntpsrv03: 172.168.10.3
+ntpsrv04: 172.168.10.4
+ntpsrv05: 172.168.10.5
+ntpsrv06: 172.168.10.6
+#+END_SRC
+
+** templates/config.j2
+#+BEGIN_EXAMPLE
+{% raw %}
+service tcp-keepalives-in
+service tcp-keepalives-out
+service timestamps debug datetime localtime
+service timestamps log datetime localtime
+service password-encryption
+logging buffered 512000
+clock timezone Beijing 8
+no ip source-route
+no ip domain lookup
+ip domain name xyz.com
+no ip http server
+no ip http secure-server
+
+!
+logging {{syslogsrv01}}
+logging {{syslogsrv02}}
+!
+snmp-server community {{community}} RO
+snmp-server ifindex persist
+ntp server {{ntpsrv01}}
+ntp server {{ntpsrv02}}
+no ntp server {{ntpsrv03}}
+no ntp server {{ntpsrv04}}
+no ntp server {{ntpsrv05}}
+no ntp server {{ntpsrv06}}
+{% endraw %}
+#+END_EXAMPLE
