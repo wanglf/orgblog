@@ -94,6 +94,7 @@ cisco_ios/site.yml
 
 ** tasks/main.yml
 #+BEGIN_SRC yaml
+{% raw %}
 ---
 - name: define provider
   set_fact:
@@ -162,6 +163,7 @@ cisco_ios/site.yml
   register: write_output
 
 - debug: var=write_output.stdout_lines
+{% endraw %}
 #+END_SRC
 
 ** vars/main.yml
