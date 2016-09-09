@@ -1,0 +1,282 @@
+#+TITLE: "Owncloud distributed architecture"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+PAGE_TAGS: owncloud
+#+PAGE_CATETORIES: infra
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+ownCloud is a self-hosted file sync and share server. It provides access to your data through a web interface, sync clients or WebDAV while providing a platform to view, sync and share across devices easily — all under your control. ownCloud’s open architecture is extensible via a simple but powerful API for applications and plugins and it works with any storage.
+
+This Document illustrate how to scale out the architecture.
+#+HTML: <!--abstract-end-->
+
+* Topologoy
+#+BEGIN_CENTER
+#+ATTR_LATEX: :float t :placement [H] :width 6cm
+file:fig/owncloud.png
+#+END_CENTER
+
+This architecture consist of five components:
+
+- Load balancer
+- Webapp
+- Database cluster
+- Cache cluster
+- File storage server
+
+* Load balancer
+HAProxy, which stands for High Availability Proxy, is a popular open source software TCP/HTTP Load Balancer and proxying solution which can be run on Linux, Solaris, and FreeBSD. Its most common use is to improve the performance and reliability of a server environment by distributing the workload across multiple servers (e.g. web, application, database).
+
+Here we use haproxy as load balancer for webapp and database cluster, and provide ha for redis master-slave cluster. We also install keepalived to provide ip floating.
+
+Haproxy configuration as follows:
+
+#+BEGIN_EXAMPLE
+defaults
+    mode                    tcp
+    log                     global
+    option                  dontlognull
+    option                  redispatch
+    retries                 3
+    timeout queue           45s
+    timeout connect         5s
+    timeout client          1m
+    timeout server          1m
+    timeout check           10s
+    maxconn                 3000
+
+listen ocdb 0.0.0.0:3306
+    mode tcp
+    balance source
+    server ocdb01 192.168.1.77:3306 check
+    server ocdb02 192.168.1.78:3306 check
+    server ocdb03 192.168.1.79:3306 check
+
+listen ocredis 0.0.0.0:6379
+    mode tcp
+    balance first
+    option tcp-check
+    tcp-check send info\ replication\r\n
+    tcp-check expect string role:master
+
+    server ocredis01 192.168.1.77:6379 maxconn 20000 check inter 1s
+    server ocredis02 192.168.1.78:6379 maxconn 20000 check inter 1s
+    server ocredis03 192.168.1.79:6379 maxconn 20000 check inter 1s
+
+listen ocwebapp 0.0.0.0:80
+    mode http
+    balance roundrobin
+    option forwardfor
+    option httpclose
+    #option http-request set-header X-Client-IP %[src]
+    server ocwebapp01 192.168.1.73:80 check
+    server ocwebapp02 192.168.1.74:80 check
+    server ocwebapp03 192.168.1.75:80 check
+    server ocwebapp04 192.168.1.76:80 check
+
+listen haproxy-monitoring *:3307
+    mode http
+    stats enable
+    stats show-legends
+    stats refresh                       60s
+    stats uri                           /
+    stats admin                         if TRUE
+#+END_EXAMPLE
+
+* Webapp
+Owncloud is developed base on LAMP (Linux + Apache + Mysql + Php) environment. Official site provide the tar ball file for downloading [[[https://download.owncloud.org/community/owncloud-9.1.0.tar.bz2][owncloud ]]]. After finish setting up LAMP, we just need to extract the tar file to apache DocumentRoot. Then we can visit http://192.168.1.73/owncloud to do some initialization work.
+
+** config.php
+#+BEGIN_SRC php
+<?php
+$CONFIG = array (
+  'instanceid' => 'oco51ibikx38',
+  'passwordsalt' => 'HrqoS90h7zTuhggUDzjhF8Oi4nM5w2',
+  'secret' => 'kmY+cxh1tfSuXjDmIsFf9m+aH48U5qq//KxZuh10JukP/LBu',
+  'trusted_domains' =>
+  array (
+    0 => '192.168.1.70',
+  ),
+  'datadirectory' => '/owncloud/data',
+  'overwrite.cli.url' => 'http://192.168.1.70/owncloud',
+  'dbtype' => 'mysql',
+  'version' => '9.1.0.15',
+  'dbname' => 'owncloud',
+  'dbhost' => 'ocdb',
+  'dbtableprefix' => 'oc_',
+  'dbuser' => 'owncloud',
+  'dbpassword' => 'owncloud',
+  'log_type' => 'owncloud',
+  'logfile' => '/var/log/owncloud/owncloud.log',
+  'loglevel' => '3',
+  'logtimezone' => 'Asia/Shanghai',
+  'log_rotate_size' => 104857600, /* 100MB */
+  'installed' => true,
+  'ldapIgnoreNamingRules' => false,
+  'ldapUserCleanupInterval' => 60, /* 1h */
+  'filelocking.enabled' => true,
+  'blacklisted_files' => array(
+    0 => '.htaccess', /* only exact file, no wildcards */
+  ),
+  'memcache.distributed' => '\OC\Memcache\Redis',
+  'memcache.locking' => '\OC\Memcache\Redis',
+  'memcache.local' => '\OC\Memcache\Redis', /* official recommend to use APCu for local, but we here use redis */
+  'redis' => array(
+    'host' => 'ocredis',
+    'port' => 6379,
+  ),
+  'upgrade.disable-web' => true,
+  'default_language' => 'cn',
+  'theme' => 'citic',
+  "knowledgebaseenabled" => false, /* disable help menu for every user */
+);
+
+#+END_SRC
+
+* MariaDB Galera Cluster
+** Mysql use authorization
+#+BEGIN_EXAMPLE
+mysql> DELETE FROM mysql.user WHERE user='';
+mysql> GRANT ALL ON *.* TO 'root'@'%' IDENTIFIED BY 'dbpass';
+mysql> GRANT USAGE ON *.* to sst_user@'%' IDENTIFIED BY 'dbpass';
+mysql> GRANT ALL PRIVILEGES on *.* to sst_user@'%';
+mysql> FLUSH PRIVILEGES;
+mysql> quit
+#+END_EXAMPLE
+** Mariadb configuration
+*** s1 server.cnf
+ #+BEGIN_EXAMPLE
+# These groups are read by MariaDB server.
+# Use it for options that only the server (but not clients) should see
+#
+# See the examples of server my.cnf files in /usr/share/mysql/
+#
+
+# this is read by the standalone daemon and embedded servers
+[server]
+
+# this is only for the mysqld standalone daemon
+[mysqld]
+skip-name-resolve
+
+#
+# * Galera-related settings
+#
+[galera]
+binlog_format=ROW
+default-storage-engine=innodb
+innodb_autoinc_lock_mode=2
+innodb_locks_unsafe_for_binlog=1
+query_cache_size=0
+query_cache_type=0
+bind-address=0.0.0.0
+datadir=/var/lib/mysql
+innodb_log_file_size=100M
+innodb_file_per_table
+innodb_flush_log_at_trx_commit=2
+wsrep_provider=/usr/lib64/galera/libgalera_smm.so
+wsrep_cluster_address="gcomm://192.168.1.77,192.168.1.78,192.168.1.79"
+wsrep_cluster_name='galera_cluster'
+wsrep_node_address='192.168.1.77'
+wsrep_node_name='ocdb01'
+wsrep_sst_method=rsync
+wsrep_sst_auth=sst_user:sst_user
+# Optional setting
+#wsrep_slave_threads=1
+#innodb_flush_log_at_trx_commit=0
+
+# this is only for embedded server
+[embedded]
+
+# This group is only read by MariaDB servers, not by MySQL.
+# If you use the same .cnf file for MySQL and MariaDB,
+# you can put MariaDB-only options here
+[mariadb]
+
+# This group is only read by MariaDB-10.0 servers.
+# If you use the same .cnf file for MariaDB of different versions,
+# use this group for options that older servers don't understand
+[mariadb-10.0]
+#+END_EXAMPLE
+
+*** s2 server.cnf
+ #+BEGIN_EXAMPLE
+wsrep_node_address='192.168.1.78'
+wsrep_node_name='ocdb02'
+ #+END_EXAMPLE
+
+*** s3 server.cnf
+ #+BEGIN_EXAMPLE
+wsrep_node_address='192.168.1.79'
+wsrep_node_name='ocdb03'
+ #+END_EXAMPLE
+
+** Start
+*** s1
+#+BEGIN_SRC sh
+service mysql start --wsrep-new-cluster
+#+END_SRC
+
+*** s2
+#+BEGIN_SRC sh
+service mysql start
+#+END_SRC
+
+*** s3
+#+BEGIN_SRC sh
+service mysql start
+#+END_SRC
+
+* Redis Cache Server
+** sentinel
+#+BEGIN_EXAMPLE
+port 26379
+
+sentinel monitor oaredis 192.168.1.77 6379 2
+sentinel down-after-milliseconds oaredis 5000
+sentinel failover-timeout oaredis 60000
+sentinel config-epoch oaredis 191
+
+logfile "/var/log/redis/sentinel.log"
+#+END_EXAMPLE
+
+#+BEGIN_SRC sh
+systemctl start redis
+systemctl start redis-sentinel
+#+END_SRC
+
+* GlusterFS
+** Format and mount the bricks
+#+BEGIN_SRC sh
+fdisk /dev/sdb
+mkfs.xfs -i size=512 /dev/sdb1
+mkdir -p /data/brick1
+echo '/dev/sdb1 /data/brick1 xfs defaults 1 2' >> /etc/fstab
+mount -a && mount
+#+END_SRC
+
+** install glusterfs-server
+#+BEGIN_SRC sh
+yum install glusterfs-server
+#+END_SRC
+
+** setup GlusterFS Volumn
+#+BEGIN_SRC sh
+gluster peer probe server2
+mkdir /data/brick1/gv0
+gluster volume create gv0 replica 2 server1:/data/brick1/gv0 server2:/data/brick1/gv0
+gluster volume start gv0
+gluster volume info
+#+END_SRC
+
+** Client
+#+BEGIN_SRC sh
+yum -y install glusterfs-fuse
+mkdir -p /owncloud
+mount -t glusterfs server1:/gv0 /owncloud
+#+END_SRC
+
+
+
+

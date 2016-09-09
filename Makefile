@@ -5,7 +5,7 @@ jekyll_dir = /var/www/www.wanglifeng.info
 reveal_dir = $(abspath /var/www/www.wanglifeng.info/reveal)
 
 menu = menu
-posts = editor network sysadmin tools language linux books
+posts = editor network sysadmin tools language linux books infra
 #slide = linux
 
 menupages:
@@ -30,7 +30,7 @@ clean:
 	puborg -c $(menu) $(posts)
 	cd slide && puborg -c $(slide)
 
-rmsitecontent: 
+rmsitecontent:
 	puborg -c $(menu) $(posts)
 	cd slide && puborg -c $(slide)
 	rm -rf /var/www/www.wanglifeng.info/_posts/

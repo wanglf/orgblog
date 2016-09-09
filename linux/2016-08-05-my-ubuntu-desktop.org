@@ -1,0 +1,163 @@
+#+TITLE: "my ubuntu desktop"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+LATEX_CLASS: latex-doc
+#+PAGE_TAGS: ubuntu
+#+PAGE_CATETORIES: linux
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+This article illustrates various settings of my desktop pc whose os is ubuntu 16.04 LTS.
+#+HTML: <!--abstract-end-->
+
+* create bootable disk
+#+BEGIN_SRC sh
+sudo dd if=~/Downloads/ubuntu-16.04.1-desktop-amd64.iso of=/dev/rdisk2 bs=1m
+#+END_SRC
+
+** find disk name
+- mac :: diskutil list
+- linux :: ls -al /dev/sd*
+
+* install ubuntu16.04 os
+use bootable usb disk to install operating system
+
+* install additional language and setup input method
+** install language
+** install fcitx input method
+#+BEGIN_SRC sh
+sudo apt-get install fcitx fcitx-config-gtk fcitx-sunpinyin fcitx-googlepinyin fcitx-module-cloudpinyin im-config
+sudo im-config -s fcitx -z default
+sudo reboot
+#+END_SRC
+
+- 添加输入法wubi, google-pingyin，需去除Only show current language复选框
+- CTRL + SPACE :: switch language
+- CTRL + SHIFT :: switch input method
+
+* prepare dotfiles
+#+BEGIN_SRC sh
+sudo apt-get install git
+sudo mkdir -p /opt/git
+sudo chown -R wesley:wesley /opt/git
+cd /opt/git
+git clone git@github.com:wanglf/dotfiles.git dotfiles.git
+#+END_SRC
+
+* ohmyzsh
+#+BEGIN_SRC sh
+git clone git://github.com/robbyrussell/oh-my-zsh.git ~/.oh-my-zsh
+sudo apt-get install zsh
+ln -s /opt/git/dotfiles.git/ohmyzsh/.zshrc ~
+cp /opt/git/dotfiles.git/ohmyzsh/.cusomrc ~
+chsh -s /bin/zsh
+sudo reboot
+#+END_SRC
+
+* terminal
+** colorscheme
+#+BEGIN_SRC sh
+cd /opt/git/dotfiles.git/gnome-terminal
+./install.sh
+#+END_SRC
+
+** dircolor
+#+BEGIN_SRC sh
+ln -s /opt/git/dotfiles.git/dircolors-solarized/dircolors.256dark ~/.dircolors.256dark
+#+END_SRC
+
+** font
+#+BEGIN_SRC sh
+mkdir -p ~/.fonts
+cp /opt/git/dotfiles.git/fonts/sauce_code_powerline_regular.otf ~/.fonts/
+sudo fc-cache -f -v
+#+END_SRC
+
+* tmux
+#+BEGIN_SRC sh
+sudo apt-get install tmux
+ln -s /opt/git/dotfiles.git/tmux/.tmux.conf ~
+#+END_SRC
+
+* ssh
+#+BEGIN_SRC sh
+cp /opt/git/dotfiles.git/ssh/config ~/.ssh/
+#+END_SRC
+
+* emacs
+** install 24.5 from source
+*** prerequiste
+#+BEGIN_SRC sh
+sudo apt-get install build-essential texinfo libx11-dev libxpm-dev libjpeg-dev libpng-dev libgif-dev libtiff-dev libgtk2.0-dev libncurses-dev libxpm-dev automake autoconf
+#+END_SRC
+
+*** install
+#+BEGIN_SRC sh
+cd emacs-24.5
+./configure
+make
+sudo make install
+#+END_SRC
+
+** ipython
+#+BEGIN_SRC sh
+sudo apt-get install python-pip
+tar xvf ipython-3.2.1.tar.gz
+cd ipython-3.2.1
+python setup.py install
+#+END_SRC
+
+** ob-shell
+#+BEGIN_SRC sh
+scp root@devsrv:/opt/download/ob-shell.el /usr/local/share/emacs/24.5/lisp/org
+scp root@devsrv:/opt/download/ob-shell.elc /usr/local/share/emacs/24.5/lisp/org
+#+END_SRC
+
+** start
+#+BEGIN_SRC sh
+rm ~/.emacs.d
+ln -s /opt/git/dotfiles.git/emacs.d ~/.emacs.d
+emacs
+#+END_SRC
+
+wait emacs to install elpa packages
+
+** usage
+#+BEGIN_SRC sh
+# in ~/.customrc add following 3 aliases
+# alias emacsd='emacs -nw --daemon --no-desktop'
+# alias killemacs='kill -9 `pidof emacs`'
+# alias ec='TERM=xterm-256color emacsclient -t'
+emacsd
+ec
+killemacs
+#+END_SRC
+
+* vim
+#+BEGIN_SRC sh
+mkdir -p ~/.vim/bundle/ && cd ~/.vim/bundle/
+git clone https://github.com/gmarik/Vundle.vim.git
+ln -s /opt/git/dotfiles.git/vim/.vimrc ~/
+#+END_SRC
+
+int vim command mode issue *PluginInstall*
+
+* atom
+#+BEGIN_SRC sh
+cp /opt/git/dotfiles.git/atom/.apmrc ~/.atom/
+#+END_SRC
+
+install following packages:
+- vim-mode
+- ex-mode
+
+* git
+#+BEGIN_SRC sh
+cp /opt/git/dotfiles.git/git/.gitconfig ~/
+#+END_SRC
+
+* tweak tool
+#+BEGIN_SRC sh
+sudo apt-get install gnome-tweak-tool
+#+END_SRC
+open gnome-tweak-tool, goto Typing menu, Caps Lock key behavior
