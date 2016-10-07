@@ -1,6 +1,7 @@
 #install jekyll
 yum -y install ruby ruby-devel rubygems
 gem install jekyll
+gem install jekyll-paginate
 
 # www.wanglifeng.info
 git clone git@github.com:/wanglf.github.io /var/www/www.wanglifeng.info
@@ -17,7 +18,7 @@ cd ~/git/orgblog.git
 make posts
 
 # nginx
-cat << 'EOF' > /etc/nginx/conf.d/jekyll.conf 
+cat << 'EOF' > /etc/nginx/conf.d/jekyll.conf
 server {
   listen       8888;
   server_name  www.wanglifeng.info;
