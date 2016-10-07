@@ -35,3 +35,9 @@ rmsitecontent:
 	cd slide && puborg -c $(slide)
 	rm -rf /var/www/www.wanglifeng.info/_posts/
 	rm -rf /var/www/www.wanglifeng.info/_site/
+
+publish:
+	cd ~/git/orgblog.git
+	make posts
+	cd /var/www/www.wanglifeng.info && jekyll build
+	cd ~/git/orgblog.git
