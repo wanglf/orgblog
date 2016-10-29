@@ -25,6 +25,8 @@ service network start
 cat > /etc/modprobe.d/bonding.conf << EOF
 alias bond0 bonding
 EOF
+# on RHEL 7/CentOS 7, use following command
+# modprobe --first-time bonding
 #+END_SRC
 
 * 配置bond接口
