@@ -1,0 +1,131 @@
+#+TITLE: "Netflow with nfsen on CentOS 7.x"
+#+AUTHOR: wanglifeng
+#+OPTIONS: H:4 ^:nil
+#+PAGE_TAGS: netflow
+#+PAGE_CATETORIES: network
+#+PAGE_LAYOUT: post
+
+#+HTML: <!--abstract-begin-->
+之前写过一篇[[http://www.wanglifeng.info/network/netflow-with-elk.html][用ELK来分析Netflow数据]] ，最终用下来发现logstash的decoder效率不是很高，且在grafana中显示es数据的时候非常卡，遂有另寻netflow sensor的想法。对比了一些解决方案:
+
+- [[http://www.ntop.org/][ntopng + nprobe]] 组合虽有很好的界面展示，但nprobe需enterprise license。换言之，需要收取一笔不小的费用。
+- [[http://wvnetflow.sourceforge.net/][webview]] 在使用logstash decoder之前，一直使用该产品，但实在太古老，功能有限，且有些小bug。
+- [[http://nfsen.sourceforge.net/][nfsen + nfdump]] 是一个完全开源免费的netflow解决方案，支持插件扩展，该项目托管于sourceforge, 是一个五星项目。
+
+权衡各种利弊，最终nfsen的方案胜出。
+#+HTML: <!--abstract-end-->
+
+* 准备
+** 软件包
+- nfsen-1.3.6p1.tar.gz
+- nfdump-1.6.13.tar.gz
+- epel repository
+
+** Cisco路由器配置
+#+BEGIN_EXAMPLE
+interface GigabitEthernet0/0
+ ip flow ingress
+interface GigabitEthernet0/1.2
+ ip flow ingress
+interface GigabitEthernet0/1.3
+ ip flow ingress
+ip flow-export source Loopback0
+ip flow-export version 9
+ip flow-export destination 1.1.1.1 2055
+#+END_EXAMPLE
+
+#+BEGIN_QUOTE
+此处1.1.1.1为nfsen所处机器IP地址，2055为侦听端口，需与nfsen配置文件对应
+#+END_QUOTE
+
+* 安装nfsen
+** 安装rpm依赖包
+#+BEGIN_SRC sh
+yum groupinstall development tools
+yum install rrdtool rrdtool-devel
+yum install httpd php perl-MailTools rrdtool-perl perl-Socket6 perl-Sys-Syslog.x86_64
+#+END_SRC
+
+** 配置php时区
+#+BEGIN_SRC sh
+echo "date.timezone = Asia/Shanghai" > /etc/php.ini
+#+END_SRC
+
+** 用户与组
+#+BEGIN_SRC sh
+useradd netflow
+usermod -G apache netflow
+#+END_SRC
+
+** 安装nfdump
+#+BEGIN_SRC sh
+cd nfdump-1.6.13
+./configure --prefix=/opt/nfdump --enable-nfprofile
+autoreconf
+make
+sudo make install
+#+END_SRC
+
+** 安装nfsen
+#+BEGIN_EXAMPLE
+cd nfsen-1.3.6p1
+cd etc
+cp nfsen-dist.conf nfsen.conf
+vi nfsen.conf
+  $BASEDIR = "/opt/nfsen";
+  $HTMLDIR = "/opt/nfsen/www/";
+  $PREFIX  = '/opt/nfdump/bin';
+  $WWWUSER  = "apache";
+  $WWWGROUP = "apache";
+
+  $MAIL_FROM   = 'nfsen@yourdomain.tld';
+  $SMTP_SERVER = 'fqdn.mail.server';
+
+  %sources = (
+      'source1' => { 'port' => '2055', 'IP' => '192.168.1.1', 'col' => '#0000ff', 'type' => 'netflow' },
+      'source2' => { 'port' => '2055', 'IP' => '192.168.1.2', 'col' => '#ff00ff', 'type' => 'netflow' },
+      'source3' => { 'port' => '2055', 'IP' => '192.168.1.3', 'col' => '#00ffff', 'type' => 'netflow' },
+  );
+
+cd ..
+sudo ./install.pl etc/nfsen.conf
+#+END_EXAMPLE
+
+** apache配置/etc/httpd/conf.d/nfsen.conf
+#+BEGIN_EXAMPLE
+<Directory "/opt/nfsen/www">
+   AllowOverride None
+   Require all granted
+</Directory>
+
+Alias /nfsen "/opt/nfsen/www"
+#+END_EXAMPLE
+
+** nfsen服务/etc/systemd/system/nfsen.service
+#+BEGIN_EXAMPLE
+[Unit]
+Description=NfSen Service
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/opt/nfsen/var/run/nfsend.pid
+ExecStart=/opt/nfsen/bin/nfsen start
+ExecStop=/opt/nfsen/bin/nfsen stop
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
+#+END_EXAMPLE
+
+** 启动服务
+#+BEGIN_SRC sh
+systemctl enable httpd
+systemctl start httpd
+systemctl enable nfsen
+systemctl start nfsen
+#+END_SRC
+
+* 参考资料
+1. [[http://nfsen.sourceforge.net/][nfsen manual]]
+2. [[https://wiki.polaire.nl/doku.php?id=nfsen_centos7][NfSen - CentOS 7.x]]
